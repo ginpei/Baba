@@ -36,10 +36,14 @@
             </Border>
             <Border x:Name="ResizeFrame"
                     Margin="4"
-                    BorderBrush="#FFFDF7"
+                    BorderBrush="Black"
                     BorderThickness="2"
                     IsHitTestVisible="False"
-                    Visibility="Collapsed" />
+                    Opacity="0.3"
+                    Visibility="Collapsed">
+                <Border BorderBrush="White"
+                        BorderThickness="1" />
+            </Border>
             <Grid x:Name="ResizeHandles"
                   Visibility="Collapsed">
                 <Thumb Tag="Top"
