@@ -17,6 +17,7 @@ namespace Baba;
 public partial class MainWindow : Window
 {
     private const int GwlExStyle = -20;
+    private const double ScreenMargin = 12;
     private const int VkControl = 0x11;
     private const int WsExTransparent = 0x20;
     private const uint SwpFrameChanged = 0x0020;
@@ -34,6 +35,8 @@ public partial class MainWindow : Window
     private nint _windowHandle;
     private bool _isClickThrough;
     private bool _isExiting;
+    private bool _isInitialPositioning = true;
+    private bool _hasPositionedInitially;
 
     public MainWindow()
     {
@@ -52,6 +55,7 @@ public partial class MainWindow : Window
         };
         _interactionTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
         _interactionTimer.Tick += UpdateInteractionState;
+        ContentRendered += PositionInitialWindow;
         SourceInitialized += OnSourceInitialized;
 
         _contextMenu = CreateContextMenu();
@@ -85,6 +89,21 @@ public partial class MainWindow : Window
         _windowHandle = new WindowInteropHelper(this).Handle;
         SetClickThrough(!IsControlPressed());
         _interactionTimer.Start();
+    }
+
+    private void PositionInitialWindow(object? sender, EventArgs e)
+    {
+        if (_hasPositionedInitially)
+        {
+            return;
+        }
+
+        var workArea = SystemParameters.WorkArea;
+        Left = Math.Max(workArea.Left, workArea.Right - ActualWidth - ScreenMargin);
+        Top = Math.Max(workArea.Top, workArea.Bottom - ActualHeight - ScreenMargin);
+        _hasPositionedInitially = true;
+        _isInitialPositioning = false;
+        UpdateInteractionState(this, EventArgs.Empty);
     }
 
     private Forms.ContextMenuStrip CreateContextMenu()
@@ -196,6 +215,11 @@ public partial class MainWindow : Window
 
     private void UpdateInteractionState(object? sender, EventArgs e)
     {
+        if (_isInitialPositioning)
+        {
+            return;
+        }
+
         var isControlPressed = IsControlPressed();
         SetClickThrough(!isControlPressed);
         Opacity = isControlPressed || !IsCursorOverWindow() ? 1 : 0;
