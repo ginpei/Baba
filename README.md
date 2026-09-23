@@ -24,6 +24,21 @@ The project-provided `Assets\mascot.png` is the default image. To use a differen
 
 If the default image is missing or cannot be loaded, Baba displays a placeholder mascot.
 
+## Configuration
+
+On first launch, Baba creates `%LocalAppData%\Baba\baba.json`, `%LocalAppData%\Baba\speech.txt`, and `%LocalAppData%\Baba\mascot.png`. The text file starts with brief usage instructions, and the image is copied from the bundled default.
+
+`baba.json` contains absolute paths for the speech and image files. Edit either path to use files stored elsewhere:
+
+```json
+{
+  "MascotImagePath": "C:\\Users\\<user>\\AppData\\Local\\Baba\\mascot.png",
+  "SpeechFilePath": "C:\\Users\\<user>\\AppData\\Local\\Baba\\speech.txt"
+}
+```
+
+When a configured speech or image file is missing, Baba creates the speech file or copies the bundled default image to the configured location.
+
 ## Interaction
 
 Mouse input passes through Baba to the window behind it. Baba hides while the pointer is over it and reappears when the pointer leaves. Hold Ctrl to keep Baba visible, drag it with the left mouse button, or right-click it to open the notification-area menu.

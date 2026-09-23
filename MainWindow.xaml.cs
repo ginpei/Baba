@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
@@ -26,7 +27,7 @@ public partial class MainWindow : Window
 
     private readonly Forms.NotifyIcon _trayIcon;
     private readonly Forms.ContextMenuStrip _contextMenu;
-    private readonly TextTailWatcher _textWatcher;
+    private readonly TextTailWatcher? _textWatcher;
     private readonly DispatcherTimer _speechTimer;
     private readonly DispatcherTimer _interactionTimer;
     private readonly string _dataDirectory;
@@ -55,13 +56,28 @@ public partial class MainWindow : Window
 
         _contextMenu = CreateContextMenu();
         _trayIcon = CreateTrayIcon(_contextMenu);
-        _textWatcher = new TextTailWatcher(Path.Combine(_dataDirectory, "speech.txt"));
-        _textWatcher.LastLineChanged += OnLastLineChanged;
-        _textWatcher.ReadFailed += OnTextReadFailed;
-        _textWatcher.Start();
 
-        LoadMascotImage();
-        ShowSpeech($"Monitoring speech file:{Environment.NewLine}{_dataDirectory}\\speech.txt");
+        try
+        {
+            var settings = SettingsService.LoadOrCreate(
+                _dataDirectory,
+                Path.Combine(AppContext.BaseDirectory, "Assets", "mascot.png"));
+            _textWatcher = new TextTailWatcher(settings.SpeechFilePath);
+            _textWatcher.LastLineChanged += OnLastLineChanged;
+            _textWatcher.ReadFailed += OnTextReadFailed;
+            _textWatcher.Start();
+
+            LoadMascotImage(settings.MascotImagePath);
+            ShowSpeech($"Monitoring speech file:{Environment.NewLine}{settings.SpeechFilePath}");
+        }
+        catch (Exception exception) when (
+            exception is ArgumentException
+            or IOException
+            or JsonException
+            or UnauthorizedAccessException)
+        {
+            ShowSpeech($"Could not load Baba settings: {exception.Message}");
+        }
     }
 
     private void OnSourceInitialized(object? sender, EventArgs e)
@@ -111,11 +127,8 @@ public partial class MainWindow : Window
         }
     }
 
-    private void LoadMascotImage()
+    private void LoadMascotImage(string imagePath)
     {
-        var customImagePath = Path.Combine(_dataDirectory, "mascot.png");
-        var defaultImagePath = Path.Combine(AppContext.BaseDirectory, "Assets", "mascot.png");
-        var imagePath = File.Exists(customImagePath) ? customImagePath : defaultImagePath;
         if (!File.Exists(imagePath))
         {
             return;
@@ -255,7 +268,7 @@ public partial class MainWindow : Window
     {
         _isExiting = true;
         _interactionTimer.Stop();
-        _textWatcher.Dispose();
+        _textWatcher?.Dispose();
         _trayIcon.Visible = false;
         _trayIcon.Dispose();
         _contextMenu.Dispose();
