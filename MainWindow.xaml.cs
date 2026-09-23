@@ -2,8 +2,10 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Baba.Services;
@@ -13,10 +15,22 @@ namespace Baba;
 
 public partial class MainWindow : Window
 {
+    private const int GwlExStyle = -20;
+    private const int VkControl = 0x11;
+    private const int WsExTransparent = 0x20;
+    private const uint SwpFrameChanged = 0x0020;
+    private const uint SwpNoActivate = 0x0010;
+    private const uint SwpNoMove = 0x0002;
+    private const uint SwpNoSize = 0x0001;
+    private const uint SwpNoZOrder = 0x0004;
+
     private readonly Forms.NotifyIcon _trayIcon;
     private readonly TextTailWatcher _textWatcher;
     private readonly DispatcherTimer _speechTimer;
+    private readonly DispatcherTimer _interactionTimer;
     private readonly string _dataDirectory;
+    private nint _windowHandle;
+    private bool _isClickThrough;
     private bool _isExiting;
 
     public MainWindow()
@@ -34,6 +48,9 @@ public partial class MainWindow : Window
             _speechTimer.Stop();
             SpeechBubble.Visibility = Visibility.Collapsed;
         };
+        _interactionTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
+        _interactionTimer.Tick += UpdateInteractionState;
+        SourceInitialized += OnSourceInitialized;
 
         _trayIcon = CreateTrayIcon();
         _textWatcher = new TextTailWatcher(Path.Combine(_dataDirectory, "speech.txt"));
@@ -43,6 +60,13 @@ public partial class MainWindow : Window
 
         LoadMascotImage();
         ShowSpeech($"Monitoring speech file:{Environment.NewLine}{_dataDirectory}\\speech.txt");
+    }
+
+    private void OnSourceInitialized(object? sender, EventArgs e)
+    {
+        _windowHandle = new WindowInteropHelper(this).Handle;
+        SetClickThrough(!IsControlPressed());
+        _interactionTimer.Start();
     }
 
     private Forms.NotifyIcon CreateTrayIcon()
@@ -134,11 +158,58 @@ public partial class MainWindow : Window
 
     private void DragWindow(object sender, MouseButtonEventArgs e)
     {
-        if (e.LeftButton == MouseButtonState.Pressed)
+        if (IsControlPressed() && e.LeftButton == MouseButtonState.Pressed)
         {
             DragMove();
         }
     }
+
+    private void UpdateInteractionState(object? sender, EventArgs e)
+    {
+        var isControlPressed = IsControlPressed();
+        SetClickThrough(!isControlPressed);
+        Opacity = isControlPressed || !IsCursorOverWindow() ? 1 : 0;
+    }
+
+    private void SetClickThrough(bool isEnabled)
+    {
+        if (_windowHandle == nint.Zero || _isClickThrough == isEnabled)
+        {
+            return;
+        }
+
+        var extendedStyle = GetWindowLongPtr(_windowHandle, GwlExStyle);
+        var updatedStyle = isEnabled
+            ? extendedStyle | (nint)WsExTransparent
+            : extendedStyle & ~(nint)WsExTransparent;
+        SetWindowLongPtr(_windowHandle, GwlExStyle, updatedStyle);
+        SetWindowPos(
+            _windowHandle,
+            nint.Zero,
+            0,
+            0,
+            0,
+            0,
+            SwpFrameChanged | SwpNoActivate | SwpNoMove | SwpNoSize | SwpNoZOrder);
+        _isClickThrough = isEnabled;
+    }
+
+    private bool IsCursorOverWindow()
+    {
+        if (!GetCursorPos(out var cursorPosition))
+        {
+            return false;
+        }
+
+        var topLeft = PointToScreen(new System.Windows.Point(0, 0));
+        var bottomRight = PointToScreen(new System.Windows.Point(ActualWidth, ActualHeight));
+        return cursorPosition.X >= topLeft.X
+            && cursorPosition.X < bottomRight.X
+            && cursorPosition.Y >= topLeft.Y
+            && cursorPosition.Y < bottomRight.Y;
+    }
+
+    private static bool IsControlPressed() => (GetAsyncKeyState(VkControl) & 0x8000) != 0;
 
     private void OnClosing(object? sender, CancelEventArgs e)
     {
@@ -161,10 +232,42 @@ public partial class MainWindow : Window
     private void ExitApplication()
     {
         _isExiting = true;
+        _interactionTimer.Stop();
         _textWatcher.Dispose();
         _trayIcon.Visible = false;
         _trayIcon.Dispose();
         Close();
         System.Windows.Application.Current.Shutdown();
+    }
+
+    [DllImport("user32.dll")]
+    private static extern short GetAsyncKeyState(int virtualKeyCode);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetCursorPos(out NativePoint point);
+
+    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
+    private static extern nint GetWindowLongPtr(nint windowHandle, int index);
+
+    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")]
+    private static extern nint SetWindowLongPtr(nint windowHandle, int index, nint newLong);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetWindowPos(
+        nint windowHandle,
+        nint insertAfter,
+        int x,
+        int y,
+        int width,
+        int height,
+        uint flags);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativePoint
+    {
+        public int X;
+        public int Y;
     }
 }
