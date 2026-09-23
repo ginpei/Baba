@@ -23,3 +23,7 @@ The project-provided `Assets\mascot.png` is the default image. To use a differen
 ```
 
 If the default image is missing or cannot be loaded, Baba displays a placeholder mascot.
+
+## Interaction
+
+Mouse input passes through Baba to the window behind it. Baba hides while the pointer is over it and reappears when the pointer leaves. Hold Ctrl to keep Baba visible, drag it with the left mouse button, or right-click it to open the notification-area menu.

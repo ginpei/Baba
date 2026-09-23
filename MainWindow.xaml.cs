@@ -25,6 +25,7 @@ public partial class MainWindow : Window
     private const uint SwpNoZOrder = 0x0004;
 
     private readonly Forms.NotifyIcon _trayIcon;
+    private readonly Forms.ContextMenuStrip _contextMenu;
     private readonly TextTailWatcher _textWatcher;
     private readonly DispatcherTimer _speechTimer;
     private readonly DispatcherTimer _interactionTimer;
@@ -52,7 +53,8 @@ public partial class MainWindow : Window
         _interactionTimer.Tick += UpdateInteractionState;
         SourceInitialized += OnSourceInitialized;
 
-        _trayIcon = CreateTrayIcon();
+        _contextMenu = CreateContextMenu();
+        _trayIcon = CreateTrayIcon(_contextMenu);
         _textWatcher = new TextTailWatcher(Path.Combine(_dataDirectory, "speech.txt"));
         _textWatcher.LastLineChanged += OnLastLineChanged;
         _textWatcher.ReadFailed += OnTextReadFailed;
@@ -69,15 +71,19 @@ public partial class MainWindow : Window
         _interactionTimer.Start();
     }
 
-    private Forms.NotifyIcon CreateTrayIcon()
+    private Forms.ContextMenuStrip CreateContextMenu()
     {
         var menu = new Forms.ContextMenuStrip();
         menu.Items.Add("Show", null, (_, _) => ShowMascot());
-        menu.Items.Add("Hide", null, (_, _) => Hide());
+        menu.Items.Add("Hide", null, (_, _) => HideMascot());
         menu.Items.Add("Open Data Folder", null, (_, _) => OpenDataDirectory());
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add("Exit", null, (_, _) => ExitApplication());
+        return menu;
+    }
 
+    private Forms.NotifyIcon CreateTrayIcon(Forms.ContextMenuStrip menu)
+    {
         var icon = new Forms.NotifyIcon
         {
             ContextMenuStrip = menu,
@@ -164,6 +170,17 @@ public partial class MainWindow : Window
         }
     }
 
+    private void ShowContextMenu(object sender, MouseButtonEventArgs e)
+    {
+        if (!IsControlPressed() || Opacity == 0)
+        {
+            return;
+        }
+
+        _contextMenu.Show(Forms.Cursor.Position);
+        e.Handled = true;
+    }
+
     private void UpdateInteractionState(object? sender, EventArgs e)
     {
         var isControlPressed = IsControlPressed();
@@ -219,7 +236,7 @@ public partial class MainWindow : Window
         }
 
         e.Cancel = true;
-        Hide();
+        HideMascot();
     }
 
     private void ShowMascot()
@@ -229,6 +246,11 @@ public partial class MainWindow : Window
         Activate();
     }
 
+    private void HideMascot()
+    {
+        Hide();
+    }
+
     private void ExitApplication()
     {
         _isExiting = true;
@@ -236,6 +258,7 @@ public partial class MainWindow : Window
         _textWatcher.Dispose();
         _trayIcon.Visible = false;
         _trayIcon.Dispose();
+        _contextMenu.Dispose();
         Close();
         System.Windows.Application.Current.Shutdown();
     }
