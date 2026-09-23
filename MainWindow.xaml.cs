@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Baba.Services;
@@ -36,6 +37,7 @@ public partial class MainWindow : Window
     private bool _isClickThrough;
     private bool _isExiting;
     private bool _isInitialPositioning = true;
+    private bool _isMascotShown;
     private bool _hasPositionedInitially;
 
     public MainWindow()
@@ -222,7 +224,42 @@ public partial class MainWindow : Window
 
         var isControlPressed = IsControlPressed();
         SetClickThrough(!isControlPressed);
-        Opacity = isControlPressed || !IsCursorOverWindow() ? 1 : 0;
+        if (isControlPressed || !IsCursorOverWindow())
+        {
+            ShowMascotWithFade();
+        }
+        else
+        {
+            HideMascotImmediately();
+        }
+    }
+
+    private void ShowMascotWithFade()
+    {
+        if (_isMascotShown)
+        {
+            return;
+        }
+
+        _isMascotShown = true;
+        BeginAnimation(
+            OpacityProperty,
+            new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180))
+            {
+                FillBehavior = FillBehavior.HoldEnd,
+            });
+    }
+
+    private void HideMascotImmediately()
+    {
+        if (!_isMascotShown)
+        {
+            return;
+        }
+
+        BeginAnimation(OpacityProperty, null);
+        Opacity = 0;
+        _isMascotShown = false;
     }
 
     private void SetClickThrough(bool isEnabled)
