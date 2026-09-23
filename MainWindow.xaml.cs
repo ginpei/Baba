@@ -5,8 +5,10 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -32,13 +34,21 @@ public partial class MainWindow : Window
     private readonly TextTailWatcher? _textWatcher;
     private readonly DispatcherTimer _speechTimer;
     private readonly DispatcherTimer _interactionTimer;
+    private readonly DispatcherTimer _resizeTimer;
     private readonly string _dataDirectory;
     private nint _windowHandle;
     private bool _isClickThrough;
     private bool _isExiting;
     private bool _isInitialPositioning = true;
     private bool _isMascotShown;
+    private bool _isResizing;
     private bool _hasPositionedInitially;
+    private ResizeDirection _resizeDirection;
+    private NativePoint _resizeStartCursorPosition;
+    private double _resizeStartHeight;
+    private double _resizeStartLeft;
+    private double _resizeStartTop;
+    private double _resizeStartWidth;
 
     public MainWindow()
     {
@@ -57,6 +67,8 @@ public partial class MainWindow : Window
         };
         _interactionTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
         _interactionTimer.Tick += UpdateInteractionState;
+        _resizeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33) };
+        _resizeTimer.Tick += ApplyPendingResize;
         ContentRendered += PositionInitialWindow;
         SourceInitialized += OnSourceInitialized;
 
@@ -198,10 +210,117 @@ public partial class MainWindow : Window
 
     private void DragWindow(object sender, MouseButtonEventArgs e)
     {
-        if (IsControlPressed() && e.LeftButton == MouseButtonState.Pressed)
+        if (IsControlPressed()
+            && !IsResizeHandle(e.OriginalSource)
+            && e.LeftButton == MouseButtonState.Pressed)
         {
             DragMove();
         }
+    }
+
+    private void ResizeHandleDragStarted(object sender, DragStartedEventArgs e)
+    {
+        if (!GetCursorPos(out _resizeStartCursorPosition))
+        {
+            return;
+        }
+
+        _isResizing = true;
+        _resizeDirection = ParseResizeDirection(((Thumb)sender).Tag);
+        _resizeStartLeft = Left;
+        _resizeStartTop = Top;
+        _resizeStartWidth = Width;
+        _resizeStartHeight = Height;
+        _resizeTimer.Start();
+    }
+
+    private void ResizeHandleDragCompleted(object sender, DragCompletedEventArgs e)
+    {
+        _resizeTimer.Stop();
+        ApplyResizeFromCursor();
+        _isResizing = false;
+        UpdateInteractionState(this, EventArgs.Empty);
+    }
+
+    private void ApplyPendingResize(object? sender, EventArgs e) => ApplyResizeFromCursor();
+
+    private void ApplyResizeFromCursor()
+    {
+        if (!GetCursorPos(out var cursorPosition))
+        {
+            return;
+        }
+
+        var dpi = VisualTreeHelper.GetDpi(this);
+        var horizontalChange = (cursorPosition.X - _resizeStartCursorPosition.X) / dpi.DpiScaleX;
+        var verticalChange = (cursorPosition.Y - _resizeStartCursorPosition.Y) / dpi.DpiScaleY;
+        ResizeWindow(_resizeDirection, horizontalChange, verticalChange);
+    }
+
+    private void ResizeWindow(ResizeDirection direction, double horizontalChange, double verticalChange)
+    {
+        var targetLeft = _resizeStartLeft;
+        var targetTop = _resizeStartTop;
+        var targetWidth = _resizeStartWidth;
+        var targetHeight = _resizeStartHeight;
+
+        if (direction.HasFlag(ResizeDirection.Left))
+        {
+            targetWidth = Math.Max(MinWidth, _resizeStartWidth - horizontalChange);
+            targetLeft = _resizeStartLeft + _resizeStartWidth - targetWidth;
+        }
+        else if (direction.HasFlag(ResizeDirection.Right))
+        {
+            targetWidth = Math.Max(MinWidth, _resizeStartWidth + horizontalChange);
+        }
+
+        if (direction.HasFlag(ResizeDirection.Top))
+        {
+            targetHeight = Math.Max(MinHeight, _resizeStartHeight - verticalChange);
+            targetTop = _resizeStartTop + _resizeStartHeight - targetHeight;
+        }
+        else if (direction.HasFlag(ResizeDirection.Bottom))
+        {
+            targetHeight = Math.Max(MinHeight, _resizeStartHeight + verticalChange);
+        }
+
+        BeginInit();
+        try
+        {
+            Width = targetWidth;
+            Height = targetHeight;
+            Left = targetLeft;
+            Top = targetTop;
+        }
+        finally
+        {
+            EndInit();
+        }
+    }
+
+    private static ResizeDirection ParseResizeDirection(object? value) =>
+        value is string name && Enum.TryParse<ResizeDirection>(name, out var direction)
+            ? direction
+            : throw new InvalidOperationException("A resize handle requires a valid resize direction.");
+
+    private static bool IsResizeHandle(object source)
+    {
+        for (var current = source as DependencyObject; current is not null;)
+        {
+            if (current is Thumb)
+            {
+                return true;
+            }
+
+            current = current switch
+            {
+                Visual visual => VisualTreeHelper.GetParent(visual),
+                FrameworkContentElement contentElement => contentElement.Parent,
+                _ => null,
+            };
+        }
+
+        return false;
     }
 
     private void ShowContextMenu(object sender, MouseButtonEventArgs e)
@@ -224,6 +343,7 @@ public partial class MainWindow : Window
 
         var isControlPressed = IsControlPressed();
         SetClickThrough(!isControlPressed);
+        UpdateResizeControls(isControlPressed && (_isResizing || IsCursorOverMascotArea()));
         if (isControlPressed || !IsCursorOverWindow())
         {
             ShowMascotWithFade();
@@ -232,6 +352,13 @@ public partial class MainWindow : Window
         {
             HideMascotImmediately();
         }
+    }
+
+    private void UpdateResizeControls(bool isVisible)
+    {
+        var visibility = isVisible ? Visibility.Visible : Visibility.Collapsed;
+        ResizeFrame.Visibility = visibility;
+        ResizeHandles.Visibility = visibility;
     }
 
     private void ShowMascotWithFade()
@@ -300,6 +427,22 @@ public partial class MainWindow : Window
             && cursorPosition.Y < bottomRight.Y;
     }
 
+    private bool IsCursorOverMascotArea()
+    {
+        if (!GetCursorPos(out var cursorPosition))
+        {
+            return false;
+        }
+
+        var topLeft = MascotArea.PointToScreen(new System.Windows.Point(0, 0));
+        var bottomRight = MascotArea.PointToScreen(
+            new System.Windows.Point(MascotArea.ActualWidth, MascotArea.ActualHeight));
+        return cursorPosition.X >= topLeft.X
+            && cursorPosition.X < bottomRight.X
+            && cursorPosition.Y >= topLeft.Y
+            && cursorPosition.Y < bottomRight.Y;
+    }
+
     private static bool IsControlPressed() => (GetAsyncKeyState(VkControl) & 0x8000) != 0;
 
     private void OnClosing(object? sender, CancelEventArgs e)
@@ -329,6 +472,7 @@ public partial class MainWindow : Window
     {
         _isExiting = true;
         _interactionTimer.Stop();
+        _resizeTimer.Stop();
         _textWatcher?.Dispose();
         _trayIcon.Visible = false;
         _trayIcon.Dispose();
@@ -366,5 +510,19 @@ public partial class MainWindow : Window
     {
         public int X;
         public int Y;
+    }
+
+    [Flags]
+    private enum ResizeDirection
+    {
+        None = 0,
+        Left = 1,
+        Top = 2,
+        Right = 4,
+        Bottom = 8,
+        TopLeft = Top | Left,
+        TopRight = Top | Right,
+        BottomLeft = Bottom | Left,
+        BottomRight = Bottom | Right,
     }
 }

@@ -4,6 +4,8 @@
         Title="Baba"
         Width="320"
         Height="390"
+        MinWidth="160"
+        MinHeight="200"
         AllowsTransparency="True"
         Background="Transparent"
         Opacity="0"
@@ -28,7 +30,8 @@
                        FontSize="16"
                        TextWrapping="Wrap" />
         </Border>
-        <Grid Margin="28,104,28,20">
+        <Grid x:Name="MascotArea"
+              Margin="28,104,28,20">
             <Image x:Name="MascotImage"
                    Stretch="Uniform"
                    Visibility="Collapsed" />
@@ -46,6 +49,83 @@
                                Text="mascot" />
                 </StackPanel>
             </Border>
+            <Border x:Name="ResizeFrame"
+                    Margin="4"
+                    BorderBrush="#FFFDF7"
+                    BorderThickness="2"
+                    IsHitTestVisible="False"
+                    Visibility="Collapsed" />
+            <Grid x:Name="ResizeHandles"
+                  Visibility="Collapsed">
+                <Thumb Tag="Top"
+                       Margin="14,0,14,0"
+                       VerticalAlignment="Top"
+                       Height="12"
+                       Cursor="SizeNS"
+                       DragStarted="ResizeHandleDragStarted"
+                       DragCompleted="ResizeHandleDragCompleted"
+                       Opacity="0" />
+                <Thumb Tag="Bottom"
+                       Margin="14,0,14,0"
+                       VerticalAlignment="Bottom"
+                       Height="12"
+                       Cursor="SizeNS"
+                       DragStarted="ResizeHandleDragStarted"
+                       DragCompleted="ResizeHandleDragCompleted"
+                       Opacity="0" />
+                <Thumb Tag="Left"
+                       Margin="0,14,0,14"
+                       HorizontalAlignment="Left"
+                       Width="12"
+                       Cursor="SizeWE"
+                       DragStarted="ResizeHandleDragStarted"
+                       DragCompleted="ResizeHandleDragCompleted"
+                       Opacity="0" />
+                <Thumb Tag="Right"
+                       Margin="0,14,0,14"
+                       HorizontalAlignment="Right"
+                       Width="12"
+                       Cursor="SizeWE"
+                       DragStarted="ResizeHandleDragStarted"
+                       DragCompleted="ResizeHandleDragCompleted"
+                       Opacity="0" />
+                <Thumb Tag="TopLeft"
+                       HorizontalAlignment="Left"
+                       VerticalAlignment="Top"
+                       Width="18"
+                       Height="18"
+                       Cursor="SizeNWSE"
+                       DragStarted="ResizeHandleDragStarted"
+                       DragCompleted="ResizeHandleDragCompleted"
+                       Opacity="0" />
+                <Thumb Tag="TopRight"
+                       HorizontalAlignment="Right"
+                       VerticalAlignment="Top"
+                       Width="18"
+                       Height="18"
+                       Cursor="SizeNESW"
+                       DragStarted="ResizeHandleDragStarted"
+                       DragCompleted="ResizeHandleDragCompleted"
+                       Opacity="0" />
+                <Thumb Tag="BottomLeft"
+                       HorizontalAlignment="Left"
+                       VerticalAlignment="Bottom"
+                       Width="18"
+                       Height="18"
+                       Cursor="SizeNESW"
+                       DragStarted="ResizeHandleDragStarted"
+                       DragCompleted="ResizeHandleDragCompleted"
+                       Opacity="0" />
+                <Thumb Tag="BottomRight"
+                       HorizontalAlignment="Right"
+                       VerticalAlignment="Bottom"
+                       Width="18"
+                       Height="18"
+                       Cursor="SizeNWSE"
+                       DragStarted="ResizeHandleDragStarted"
+                       DragCompleted="ResizeHandleDragCompleted"
+                       Opacity="0" />
+            </Grid>
         </Grid>
     </Grid>
 </Window>

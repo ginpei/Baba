@@ -41,4 +41,4 @@ When a configured speech or image file is missing, Baba creates the speech file 
 
 ## Interaction
 
-Mouse input passes through Baba to the window behind it. Baba hides while the pointer is over it and reappears when the pointer leaves. Hold Ctrl to keep Baba visible, drag it with the left mouse button, or right-click it to open the notification-area menu.
+Mouse input passes through Baba to the window behind it. Baba hides while the pointer is over it and reappears when the pointer leaves. Hold Ctrl while hovering over the mascot to reveal its resize frame. Drag a frame edge or corner to resize the window, drag within the mascot to move it, or right-click it to open the notification-area menu.
