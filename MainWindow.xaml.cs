@@ -36,6 +36,7 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _interactionTimer;
     private readonly DispatcherTimer _resizeTimer;
     private readonly string _dataDirectory;
+    private BabaSettings? _settings;
     private nint _windowHandle;
     private bool _isClickThrough;
     private bool _isExiting;
@@ -80,6 +81,8 @@ public partial class MainWindow : Window
             var settings = SettingsService.LoadOrCreate(
                 _dataDirectory,
                 Path.Combine(AppContext.BaseDirectory, "Assets", "mascot.png"));
+            _settings = settings;
+            ApplySavedWindowSize(settings);
             _textWatcher = new TextTailWatcher(settings.SpeechFilePath);
             _textWatcher.LastLineChanged += OnLastLineChanged;
             _textWatcher.ReadFailed += OnTextReadFailed;
@@ -113,8 +116,11 @@ public partial class MainWindow : Window
         }
 
         var workArea = SystemParameters.WorkArea;
-        Left = Math.Max(workArea.Left, workArea.Right - ActualWidth - ScreenMargin);
-        Top = Math.Max(workArea.Top, workArea.Bottom - ActualHeight - ScreenMargin);
+        if (!ApplySavedWindowPosition())
+        {
+            Left = Math.Max(workArea.Left, workArea.Right - ActualWidth - ScreenMargin);
+            Top = Math.Max(workArea.Top, workArea.Bottom - ActualHeight - ScreenMargin);
+        }
         _hasPositionedInitially = true;
         _isInitialPositioning = false;
         UpdateInteractionState(this, EventArgs.Empty);
@@ -215,6 +221,7 @@ public partial class MainWindow : Window
             && e.LeftButton == MouseButtonState.Pressed)
         {
             DragMove();
+            SaveWindowBounds();
         }
     }
 
@@ -239,7 +246,56 @@ public partial class MainWindow : Window
         _resizeTimer.Stop();
         ApplyResizeFromCursor();
         _isResizing = false;
+        SaveWindowBounds();
         UpdateInteractionState(this, EventArgs.Empty);
+    }
+
+    private void ApplySavedWindowSize(BabaSettings settings)
+    {
+        if (settings.WindowWidth is not { } width
+            || settings.WindowHeight is not { } height
+            || !double.IsFinite(width)
+            || !double.IsFinite(height)
+            || width <= 0
+            || height <= 0)
+        {
+            return;
+        }
+
+        Width = Math.Max(MinWidth, width);
+        Height = Math.Max(MinHeight, height);
+    }
+
+    private bool ApplySavedWindowPosition()
+    {
+        if (_settings?.WindowLeft is not { } left
+            || _settings.WindowTop is not { } top
+            || !double.IsFinite(left)
+            || !double.IsFinite(top))
+        {
+            return false;
+        }
+
+        Left = left;
+        Top = top;
+        return true;
+    }
+
+    private void SaveWindowBounds()
+    {
+        if (_settings is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _settings = SettingsService.SaveWindowBounds(_dataDirectory, _settings, Left, Top, Width, Height);
+        }
+        catch (Exception exception) when (exception is ArgumentOutOfRangeException or IOException or UnauthorizedAccessException)
+        {
+            ShowSpeech($"Could not save window bounds: {exception.Message}");
+        }
     }
 
     private void ApplyPendingResize(object? sender, EventArgs e) => ApplyResizeFromCursor();

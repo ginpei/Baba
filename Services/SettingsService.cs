@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Baba.Services;
 
@@ -8,6 +9,14 @@ public sealed class BabaSettings
     public string MascotImagePath { get; init; } = string.Empty;
 
     public string SpeechFilePath { get; init; } = string.Empty;
+
+    public double? WindowWidth { get; init; }
+
+    public double? WindowHeight { get; init; }
+
+    public double? WindowLeft { get; init; }
+
+    public double? WindowTop { get; init; }
 }
 
 public static class SettingsService
@@ -22,6 +31,7 @@ public static class SettingsService
 
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         WriteIndented = true,
     };
 
@@ -39,6 +49,10 @@ public static class SettingsService
         {
             MascotImagePath = ResolvePath(settings.MascotImagePath, dataDirectory),
             SpeechFilePath = ResolvePath(settings.SpeechFilePath, dataDirectory),
+            WindowWidth = settings.WindowWidth,
+            WindowHeight = settings.WindowHeight,
+            WindowLeft = settings.WindowLeft,
+            WindowTop = settings.WindowTop,
         };
 
         EnsureSpeechFile(resolvedSettings.SpeechFilePath, isNewConfig);
@@ -52,6 +66,39 @@ public static class SettingsService
         }
 
         return resolvedSettings;
+    }
+
+    public static BabaSettings SaveWindowBounds(
+        string dataDirectory,
+        BabaSettings settings,
+        double left,
+        double top,
+        double width,
+        double height)
+    {
+        if (!double.IsFinite(left)
+            || !double.IsFinite(top)
+            || !double.IsFinite(width)
+            || width <= 0
+            || !double.IsFinite(height)
+            || height <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(width), "Window bounds must be finite, and dimensions must be positive.");
+        }
+
+        var updatedSettings = new BabaSettings
+        {
+            MascotImagePath = settings.MascotImagePath,
+            SpeechFilePath = settings.SpeechFilePath,
+            WindowWidth = width,
+            WindowHeight = height,
+            WindowLeft = left,
+            WindowTop = top,
+        };
+        File.WriteAllText(
+            Path.Combine(dataDirectory, ConfigFileName),
+            JsonSerializer.Serialize(updatedSettings, SerializerOptions));
+        return updatedSettings;
     }
 
     private static BabaSettings CreateDefaultSettings(string dataDirectory) => new()

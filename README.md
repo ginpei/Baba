@@ -28,12 +28,16 @@ If the default image is missing or cannot be loaded, Baba displays a placeholder
 
 On first launch, Baba creates `%LocalAppData%\Baba\baba.json`, `%LocalAppData%\Baba\speech.txt`, and `%LocalAppData%\Baba\mascot.png`. The text file starts with brief usage instructions, and the image is copied from the bundled default.
 
-`baba.json` contains absolute paths for the speech and image files. Edit either path to use files stored elsewhere:
+`baba.json` contains absolute paths for the speech and image files. Edit either path to use files stored elsewhere. After a move or resize, it also stores the current window bounds:
 
 ```json
 {
   "MascotImagePath": "C:\\Users\\<user>\\AppData\\Local\\Baba\\mascot.png",
-  "SpeechFilePath": "C:\\Users\\<user>\\AppData\\Local\\Baba\\speech.txt"
+  "SpeechFilePath": "C:\\Users\\<user>\\AppData\\Local\\Baba\\speech.txt",
+  "WindowWidth": 320,
+  "WindowHeight": 390,
+  "WindowLeft": 1588,
+  "WindowTop": 666
 }
 ```
 
