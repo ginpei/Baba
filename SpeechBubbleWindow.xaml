@@ -1,0 +1,22 @@
+<Window x:Class="Baba.SpeechBubbleWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="288"
+        SizeToContent="Height"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Opacity="0"
+        ShowInTaskbar="False"
+        Topmost="True"
+        WindowStyle="None">
+    <Border Padding="14,10"
+            Background="#FFFDF7"
+            BorderBrush="#54504B"
+            BorderThickness="2"
+            CornerRadius="14">
+        <TextBlock x:Name="SpeechText"
+                   Foreground="#252321"
+                   FontSize="16"
+                   TextWrapping="Wrap" />
+    </Border>
+</Window>

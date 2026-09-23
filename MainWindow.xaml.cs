@@ -31,6 +31,7 @@ public partial class MainWindow : Window
 
     private readonly Forms.NotifyIcon _trayIcon;
     private readonly Forms.ContextMenuStrip _contextMenu;
+    private readonly SpeechBubbleWindow _speechWindow;
     private readonly TextTailWatcher? _textWatcher;
     private readonly DispatcherTimer _speechTimer;
     private readonly DispatcherTimer _interactionTimer;
@@ -43,7 +44,9 @@ public partial class MainWindow : Window
     private bool _isInitialPositioning = true;
     private bool _isMascotShown;
     private bool _isResizing;
+    private bool _isSpeechVisible;
     private bool _hasPositionedInitially;
+    private string? _currentSpeechText;
     private ResizeDirection _resizeDirection;
     private NativePoint _resizeStartCursorPosition;
     private double _resizeStartHeight;
@@ -54,6 +57,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        _speechWindow = new SpeechBubbleWindow();
 
         _dataDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -64,13 +68,16 @@ public partial class MainWindow : Window
         _speechTimer.Tick += (_, _) =>
         {
             _speechTimer.Stop();
-            SpeechBubble.Visibility = Visibility.Collapsed;
+            _isSpeechVisible = false;
+            _speechWindow.Hide();
         };
         _interactionTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
         _interactionTimer.Tick += UpdateInteractionState;
         _resizeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33) };
         _resizeTimer.Tick += ApplyPendingResize;
         ContentRendered += PositionInitialWindow;
+        LocationChanged += (_, _) => PositionSpeechWindow();
+        SizeChanged += (_, _) => PositionSpeechWindow();
         SourceInitialized += OnSourceInitialized;
 
         _contextMenu = CreateContextMenu();
@@ -123,7 +130,9 @@ public partial class MainWindow : Window
         }
         _hasPositionedInitially = true;
         _isInitialPositioning = false;
+        _speechWindow.Owner = this;
         UpdateInteractionState(this, EventArgs.Empty);
+        ShowSpeechWindow();
     }
 
     private Forms.ContextMenuStrip CreateContextMenu()
@@ -208,10 +217,53 @@ public partial class MainWindow : Window
 
     private void ShowSpeech(string text)
     {
-        SpeechText.Text = text;
-        SpeechBubble.Visibility = Visibility.Visible;
+        _currentSpeechText = text;
+        _isSpeechVisible = true;
+        ShowSpeechWindow();
         _speechTimer.Stop();
         _speechTimer.Start();
+    }
+
+    private void ShowSpeechWindow()
+    {
+        if (!_hasPositionedInitially || !_isSpeechVisible || _currentSpeechText is null)
+        {
+            return;
+        }
+
+        _speechWindow.SetSpeech(_currentSpeechText);
+        if (!_speechWindow.IsVisible)
+        {
+            _speechWindow.Opacity = 0;
+            _speechWindow.Show();
+        }
+
+        _speechWindow.UpdateLayout();
+        PositionSpeechWindow();
+        _speechWindow.Opacity = 1;
+    }
+
+    private void PositionSpeechWindow()
+    {
+        if (!_speechWindow.IsVisible)
+        {
+            return;
+        }
+
+        _speechWindow.UpdateLayout();
+
+        var workArea = SystemParameters.WorkArea;
+        var width = _speechWindow.ActualWidth;
+        var height = _speechWindow.ActualHeight;
+        var left = Left + (ActualWidth - width) / 2;
+        var top = Top - height - 8;
+        if (top < workArea.Top)
+        {
+            top = Top + ActualHeight + 8;
+        }
+
+        _speechWindow.Left = Math.Clamp(left, workArea.Left, Math.Max(workArea.Left, workArea.Right - width));
+        _speechWindow.Top = Math.Clamp(top, workArea.Top, Math.Max(workArea.Top, workArea.Bottom - height));
     }
 
     private void DragWindow(object sender, MouseButtonEventArgs e)
@@ -431,6 +483,7 @@ public partial class MainWindow : Window
             {
                 FillBehavior = FillBehavior.HoldEnd,
             });
+        ShowSpeechWindow();
     }
 
     private void HideMascotImmediately()
@@ -443,6 +496,7 @@ public partial class MainWindow : Window
         BeginAnimation(OpacityProperty, null);
         Opacity = 0;
         _isMascotShown = false;
+        _speechWindow.Hide();
     }
 
     private void SetClickThrough(bool isEnabled)
@@ -517,11 +571,13 @@ public partial class MainWindow : Window
         Show();
         WindowState = WindowState.Normal;
         Activate();
+        ShowSpeechWindow();
     }
 
     private void HideMascot()
     {
         Hide();
+        _speechWindow.Hide();
     }
 
     private void ExitApplication()
@@ -533,6 +589,7 @@ public partial class MainWindow : Window
         _trayIcon.Visible = false;
         _trayIcon.Dispose();
         _contextMenu.Dispose();
+        _speechWindow.Close();
         Close();
         System.Windows.Application.Current.Shutdown();
     }

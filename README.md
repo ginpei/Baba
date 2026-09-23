@@ -24,6 +24,8 @@ The project-provided `Assets\mascot.png` is the default image. To use a differen
 
 If the default image is missing or cannot be loaded, Baba displays a placeholder mascot.
 
+The speech bubble has a fixed width and follows the mascot independently, so resizing the mascot does not change the bubble's dimensions.
+
 ## Configuration
 
 On first launch, Baba creates `%LocalAppData%\Baba\baba.json`, `%LocalAppData%\Baba\speech.txt`, and `%LocalAppData%\Baba\mascot.png`. The text file starts with brief usage instructions, and the image is copied from the bundled default.
