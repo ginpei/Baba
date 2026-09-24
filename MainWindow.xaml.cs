@@ -222,7 +222,7 @@ public partial class MainWindow : Window
 
         _speechWindow.UpdateLayout();
 
-        var workArea = SystemParameters.WorkArea;
+        var workArea = GetMascotWorkArea();
         var width = _speechWindow.ActualWidth;
         var height = _speechWindow.ActualHeight;
         var left = Left + (ActualWidth - width) / 2;
@@ -234,6 +234,26 @@ public partial class MainWindow : Window
 
         _speechWindow.Left = Math.Clamp(left, workArea.Left, Math.Max(workArea.Left, workArea.Right - width));
         _speechWindow.Top = Math.Clamp(top, workArea.Top, Math.Max(workArea.Top, workArea.Bottom - height));
+    }
+
+    private Rect GetMascotWorkArea()
+    {
+        var mascotCenter = PointToScreen(
+            new System.Windows.Point(ActualWidth / 2, ActualHeight / 2));
+        var screenPoint = new System.Drawing.Point(
+            (int)Math.Round(mascotCenter.X),
+            (int)Math.Round(mascotCenter.Y));
+        var workingArea = System.Windows.Forms.Screen.FromPoint(screenPoint).WorkingArea;
+        var relativeTopLeft = PointFromScreen(
+            new System.Windows.Point(workingArea.Left, workingArea.Top));
+        var relativeBottomRight = PointFromScreen(
+            new System.Windows.Point(workingArea.Right, workingArea.Bottom));
+        var workArea = new Rect(
+            Left + relativeTopLeft.X,
+            Top + relativeTopLeft.Y,
+            relativeBottomRight.X - relativeTopLeft.X,
+            relativeBottomRight.Y - relativeTopLeft.Y);
+        return workArea;
     }
 
     private void BeginWindowDrag(object sender, MouseButtonEventArgs e)
