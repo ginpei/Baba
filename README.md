@@ -9,13 +9,13 @@ dotnet build
 dotnet run
 ```
 
-On first launch, Baba creates the following directory and an empty `speech.txt` file:
+On first launch, Baba creates the following directory and an empty `moments.txt` file:
 
 ```text
 %LocalAppData%\Baba
 ```
 
-Appending a non-whitespace line to `speech.txt` displays that line in the speech bubble.
+Appending a non-whitespace line to `moments.txt` displays that line in the speech bubble.
 
 For speech files on UNC paths, including `\\wsl.localhost\...`, Baba polls once per second as a fallback because file-change notifications from network-backed filesystems can be unreliable.
 
@@ -31,14 +31,14 @@ The speech bubble has a fixed width and follows the mascot independently, so res
 
 ## Configuration
 
-On first launch, Baba creates `%LocalAppData%\Baba\baba.json`, `%LocalAppData%\Baba\speech.txt`, and `%LocalAppData%\Baba\mascot.png`. The text file starts with brief usage instructions, and the image is copied from the bundled default.
+On first launch, Baba creates `%LocalAppData%\Baba\baba.json`, `%LocalAppData%\Baba\moments.txt`, and `%LocalAppData%\Baba\mascot.png`. The text file starts with brief usage instructions, and the image is copied from the bundled default.
 
 `baba.json` contains absolute paths for the speech and image files. Edit either path to use files stored elsewhere. After a move or resize, it also stores the current window bounds:
 
 ```json
 {
   "MascotImagePath": "C:\\Users\\<user>\\AppData\\Local\\Baba\\mascot.png",
-  "SpeechFilePath": "C:\\Users\\<user>\\AppData\\Local\\Baba\\speech.txt",
+  "SpeechFilePath": "C:\\Users\\<user>\\AppData\\Local\\Baba\\moments.txt",
   "SpeechLinePattern": "^- ....-..-.. ..:..:.. (.+)$",
   "WindowWidth": 320,
   "WindowHeight": 390,

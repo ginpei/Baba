@@ -108,7 +108,7 @@ public static class SettingsService
     private static BabaSettings CreateDefaultSettings(string dataDirectory) => new()
     {
         MascotImagePath = Path.Combine(dataDirectory, "mascot.png"),
-        SpeechFilePath = Path.Combine(dataDirectory, "speech.txt"),
+        SpeechFilePath = Path.Combine(dataDirectory, "moments.txt"),
     };
 
     private static BabaSettings LoadSettings(string configPath)
