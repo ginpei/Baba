@@ -21,6 +21,9 @@ namespace Baba;
 public partial class MainWindow : Window
 {
     private const int GwlExStyle = -20;
+    private const double MaximumWindowHeightRatio = 0.6;
+    private const double MaximumWindowSize = 640;
+    private const double MaximumWindowWidthRatio = 0.5;
     private const double ScreenMargin = 12;
     private const int VkControl = 0x11;
     private const int WsExTransparent = 0x20;
@@ -338,8 +341,9 @@ public partial class MainWindow : Window
             return;
         }
 
-        Width = Math.Max(MinWidth, width);
-        Height = Math.Max(MinHeight, height);
+        var maximumSize = GetMaximumWindowSize();
+        Width = Math.Clamp(width, MinWidth, maximumSize.Width);
+        Height = Math.Clamp(height, MinHeight, maximumSize.Height);
     }
 
     private bool ApplySavedWindowPosition()
@@ -391,6 +395,7 @@ public partial class MainWindow : Window
 
     private void ResizeWindow(ResizeDirection direction, double horizontalChange, double verticalChange)
     {
+        var maximumSize = GetMaximumWindowSize();
         var targetLeft = _resizeStartLeft;
         var targetTop = _resizeStartTop;
         var targetWidth = _resizeStartWidth;
@@ -398,22 +403,22 @@ public partial class MainWindow : Window
 
         if (direction.HasFlag(ResizeDirection.Left))
         {
-            targetWidth = Math.Max(MinWidth, _resizeStartWidth - horizontalChange);
+            targetWidth = Math.Clamp(_resizeStartWidth - horizontalChange, MinWidth, maximumSize.Width);
             targetLeft = _resizeStartLeft + _resizeStartWidth - targetWidth;
         }
         else if (direction.HasFlag(ResizeDirection.Right))
         {
-            targetWidth = Math.Max(MinWidth, _resizeStartWidth + horizontalChange);
+            targetWidth = Math.Clamp(_resizeStartWidth + horizontalChange, MinWidth, maximumSize.Width);
         }
 
         if (direction.HasFlag(ResizeDirection.Top))
         {
-            targetHeight = Math.Max(MinHeight, _resizeStartHeight - verticalChange);
+            targetHeight = Math.Clamp(_resizeStartHeight - verticalChange, MinHeight, maximumSize.Height);
             targetTop = _resizeStartTop + _resizeStartHeight - targetHeight;
         }
         else if (direction.HasFlag(ResizeDirection.Bottom))
         {
-            targetHeight = Math.Max(MinHeight, _resizeStartHeight + verticalChange);
+            targetHeight = Math.Clamp(_resizeStartHeight + verticalChange, MinHeight, maximumSize.Height);
         }
 
         BeginInit();
@@ -428,6 +433,14 @@ public partial class MainWindow : Window
         {
             EndInit();
         }
+    }
+
+    private (double Width, double Height) GetMaximumWindowSize()
+    {
+        var workArea = SystemParameters.WorkArea;
+        return (
+            Math.Max(MinWidth, Math.Min(MaximumWindowSize, workArea.Width * MaximumWindowWidthRatio)),
+            Math.Max(MinHeight, Math.Min(MaximumWindowSize, workArea.Height * MaximumWindowHeightRatio)));
     }
 
     private static ResizeDirection ParseResizeDirection(object? value) =>
