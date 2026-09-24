@@ -1,5 +1,5 @@
 using System.Windows;
-using Baba.Presentation;
+using System.Windows.Input;
 
 namespace Baba;
 
@@ -8,16 +8,23 @@ public partial class SpeechBubbleWindow : Window
     public SpeechBubbleWindow()
     {
         InitializeComponent();
-        SourceInitialized += OnSourceInitialized;
     }
+
+    public event EventHandler? DismissRequested;
 
     public void SetSpeech(string text)
     {
         SpeechText.Text = text;
     }
 
-    private void OnSourceInitialized(object? sender, EventArgs e)
+    private void DismissSpeech(object sender, MouseButtonEventArgs e)
     {
-        NativeWindowStyles.SetClickThrough(this, true);
+        if (e.ChangedButton is not (MouseButton.Left or MouseButton.Right))
+        {
+            return;
+        }
+
+        DismissRequested?.Invoke(this, EventArgs.Empty);
+        e.Handled = true;
     }
 }

@@ -44,14 +44,10 @@ public partial class MainWindow : Window
             NativeInput.IsControlPressed);
         _interactionController.SpeechBubbleHidden += (_, _) => _speechWindow.Opacity = 0;
         _interactionController.SpeechBubbleShown += (_, _) => ShowSpeechWindow();
+        _speechWindow.DismissRequested += (_, _) => DismissSpeech();
 
         _speechTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
-        _speechTimer.Tick += (_, _) =>
-        {
-            _speechTimer.Stop();
-            _isSpeechVisible = false;
-            _speechWindow.Hide();
-        };
+        _speechTimer.Tick += (_, _) => DismissSpeech();
         _interactionTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
         _interactionTimer.Tick += UpdateInteractionState;
         ContentRendered += PositionInitialWindow;
@@ -208,6 +204,13 @@ public partial class MainWindow : Window
         _speechWindow.UpdateLayout();
         PositionSpeechWindow();
         _speechWindow.Opacity = 1;
+    }
+
+    private void DismissSpeech()
+    {
+        _speechTimer.Stop();
+        _isSpeechVisible = false;
+        _speechWindow.Hide();
     }
 
     private void PositionSpeechWindow()

@@ -6,6 +6,7 @@
         AllowsTransparency="True"
         Background="Transparent"
         Opacity="0"
+        PreviewMouseDown="DismissSpeech"
         ShowInTaskbar="False"
         Topmost="True"
         WindowStyle="None">
