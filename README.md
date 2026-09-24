@@ -9,6 +9,13 @@ dotnet build
 dotnet run
 ```
 
+To try a release build:
+
+```powershell
+dotnet build --configuration Release
+bin\Release\net10.0-windows\Baba.exe
+```
+
 Run the unit tests with:
 
 ```powershell
