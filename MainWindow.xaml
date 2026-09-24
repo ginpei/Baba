@@ -13,7 +13,10 @@
         Topmost="True"
         WindowStyle="None"
         Closing="OnClosing">
-    <Grid MouseLeftButtonDown="DragWindow"
+    <Grid MouseLeftButtonDown="BeginWindowDrag"
+          MouseLeftButtonUp="EndWindowDrag"
+          MouseMove="MoveWindow"
+          LostMouseCapture="CancelWindowDrag"
           MouseRightButtonUp="ShowContextMenu">
         <Grid x:Name="MascotArea"
               Margin="28,20">

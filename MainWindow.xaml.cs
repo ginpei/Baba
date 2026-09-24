@@ -46,6 +46,7 @@ public partial class MainWindow : Window
     private bool _isClickThrough;
     private bool _isExiting;
     private bool _isInitialPositioning = true;
+    private bool _isDragging;
     private bool _isMascotShown;
     private bool _isResizing;
     private bool _isSpeechVisible;
@@ -57,6 +58,9 @@ public partial class MainWindow : Window
     private double _resizeStartLeft;
     private double _resizeStartTop;
     private double _resizeStartWidth;
+    private NativePoint _dragStartCursorPosition;
+    private double _dragStartLeft;
+    private double _dragStartTop;
 
     public MainWindow()
     {
@@ -293,15 +297,53 @@ public partial class MainWindow : Window
         _speechWindow.Top = Math.Clamp(top, workArea.Top, Math.Max(workArea.Top, workArea.Bottom - height));
     }
 
-    private void DragWindow(object sender, MouseButtonEventArgs e)
+    private void BeginWindowDrag(object sender, MouseButtonEventArgs e)
     {
-        if (IsControlPressed()
-            && !IsResizeHandle(e.OriginalSource)
-            && e.LeftButton == MouseButtonState.Pressed)
+        if (!IsControlPressed()
+            || IsResizeHandle(e.OriginalSource)
+            || e.LeftButton != MouseButtonState.Pressed
+            || !GetCursorPos(out _dragStartCursorPosition))
         {
-            DragMove();
-            SaveWindowBounds();
+            return;
         }
+
+        _isDragging = true;
+        _dragStartLeft = Left;
+        _dragStartTop = Top;
+        Mouse.Capture((IInputElement)sender);
+        e.Handled = true;
+    }
+
+    private void MoveWindow(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        if (!_isDragging || !GetCursorPos(out var cursorPosition))
+        {
+            return;
+        }
+
+        var dpi = VisualTreeHelper.GetDpi(this);
+        Left = _dragStartLeft + (cursorPosition.X - _dragStartCursorPosition.X) / dpi.DpiScaleX;
+        Top = _dragStartTop + (cursorPosition.Y - _dragStartCursorPosition.Y) / dpi.DpiScaleY;
+        e.Handled = true;
+    }
+
+    private void EndWindowDrag(object sender, MouseButtonEventArgs e)
+    {
+        if (!_isDragging)
+        {
+            return;
+        }
+
+        MoveWindow(sender, e);
+        _isDragging = false;
+        Mouse.Capture(null);
+        SaveWindowBounds();
+        e.Handled = true;
+    }
+
+    private void CancelWindowDrag(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        _isDragging = false;
     }
 
     private void ResizeHandleDragStarted(object sender, DragStartedEventArgs e)
@@ -487,7 +529,7 @@ public partial class MainWindow : Window
         }
 
         var isControlPressed = IsControlPressed();
-        SetClickThrough(!isControlPressed);
+        SetClickThrough(!isControlPressed && !_isDragging && !_isResizing);
         UpdateResizeControls(isControlPressed && (_isResizing || IsCursorOverMascotArea()));
         if (isControlPressed || !IsCursorOverWindow())
         {
