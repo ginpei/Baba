@@ -9,7 +9,7 @@ public partial class SpeechBubbleWindow : Window
     private const double DismissedScale = 0.96;
     private const double HiddenOffset = 6;
     private const double HiddenScale = 0.92;
-    private static readonly Duration HideDuration = new(TimeSpan.FromMilliseconds(180));
+    private static readonly Duration DismissDuration = new(TimeSpan.FromMilliseconds(100));
     private static readonly Duration ShowDuration = new(TimeSpan.FromMilliseconds(160));
     private int _animationGeneration;
 
@@ -74,7 +74,7 @@ public partial class SpeechBubbleWindow : Window
             translationAnimation);
     }
 
-    public void AnimateOut(bool hideAfterAnimation)
+    public void DismissAnimated()
     {
         if (!IsVisible)
         {
@@ -86,18 +86,15 @@ public partial class SpeechBubbleWindow : Window
         var currentOffset = BubbleTranslation.Y;
         var currentScale = BubbleScale.ScaleX;
         StopAnimations();
-        Bubble.Opacity = 0;
-        BubbleScale.ScaleX = DismissedScale;
-        BubbleScale.ScaleY = DismissedScale;
-        BubbleTranslation.Y = HiddenOffset / 2;
+        SetDismissedVisual();
 
         var easing = new CubicEase { EasingMode = EasingMode.EaseIn };
-        var opacityAnimation = CreateAnimation(currentOpacity, 0, HideDuration, easing);
-        var scaleAnimation = CreateAnimation(currentScale, DismissedScale, HideDuration, easing);
+        var opacityAnimation = CreateAnimation(currentOpacity, 0, DismissDuration, easing);
+        var scaleAnimation = CreateAnimation(currentScale, DismissedScale, DismissDuration, easing);
         var translationAnimation = CreateAnimation(
             currentOffset,
             HiddenOffset / 2,
-            HideDuration,
+            DismissDuration,
             easing);
         opacityAnimation.Completed += (_, _) =>
         {
@@ -107,10 +104,7 @@ public partial class SpeechBubbleWindow : Window
             }
 
             StopAnimations();
-            if (hideAfterAnimation)
-            {
-                Hide();
-            }
+            Hide();
         };
 
         Bubble.BeginAnimation(OpacityProperty, opacityAnimation);
@@ -119,6 +113,18 @@ public partial class SpeechBubbleWindow : Window
         BubbleTranslation.BeginAnimation(
             System.Windows.Media.TranslateTransform.YProperty,
             translationAnimation);
+    }
+
+    public void HideForPointer()
+    {
+        if (!IsVisible)
+        {
+            return;
+        }
+
+        _animationGeneration++;
+        StopAnimations();
+        SetDismissedVisual();
     }
 
     public void HideImmediately()
@@ -175,5 +181,13 @@ public partial class SpeechBubbleWindow : Window
         BubbleScale.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleXProperty, null);
         BubbleScale.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleYProperty, null);
         BubbleTranslation.BeginAnimation(System.Windows.Media.TranslateTransform.YProperty, null);
+    }
+
+    private void SetDismissedVisual()
+    {
+        Bubble.Opacity = 0;
+        BubbleScale.ScaleX = DismissedScale;
+        BubbleScale.ScaleY = DismissedScale;
+        BubbleTranslation.Y = HiddenOffset / 2;
     }
 }

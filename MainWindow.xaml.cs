@@ -46,7 +46,7 @@ public partial class MainWindow : Window
         {
             if (_isSpeechVisible)
             {
-                _speechWindow.AnimateOut(false);
+                _speechWindow.HideForPointer();
             }
         };
         _interactionController.SpeechBubbleShown += (_, _) => ShowSpeechWindow();
@@ -211,7 +211,7 @@ public partial class MainWindow : Window
     {
         _speechTimer.Stop();
         _isSpeechVisible = false;
-        _speechWindow.AnimateOut(true);
+        _speechWindow.DismissAnimated();
     }
 
     private void PositionSpeechWindow()
