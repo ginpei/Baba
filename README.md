@@ -92,4 +92,4 @@ When it is omitted, Baba displays the entire non-empty line.
 
 ## Interaction
 
-Mouse input passes through the mascot to the window behind it. The mascot and speech bubble both hide while the pointer is over the mascot. Only the speech bubble hides while the pointer is over the bubble. Hidden elements reappear when the pointer leaves. Left-click or right-click the speech bubble to close it. Hold Ctrl while hovering over the mascot to reveal its resize frame. Click the mascot to display the latest message again or restart its display timer, drag a frame edge or corner to resize the window, drag within the mascot to move it, or right-click it to open the notification-area menu.
+Mouse input passes through the mascot to the window behind it. Hold Ctrl while hovering over the mascot to interact.
