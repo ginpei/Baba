@@ -1,6 +1,8 @@
 using System.IO;
+using Baba.Configuration;
+using Baba.Infrastructure;
 
-namespace Baba.Services;
+namespace Baba.Application;
 
 public static class BabaDataDirectoryInitializer
 {

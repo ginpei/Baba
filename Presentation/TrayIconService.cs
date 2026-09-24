@@ -1,7 +1,7 @@
 using System.Drawing;
 using Forms = System.Windows.Forms;
 
-namespace Baba.Infrastructure;
+namespace Baba.Presentation;
 
 internal sealed class TrayIconService : IDisposable
 {

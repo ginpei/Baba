@@ -1,11 +1,10 @@
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-namespace Baba.Infrastructure;
+namespace Baba.Presentation;
 
 internal sealed class MascotBoundsController : IDisposable
 {
@@ -58,7 +57,7 @@ internal sealed class MascotBoundsController : IDisposable
     {
         if (IsResizeHandle(e.OriginalSource)
             || e.LeftButton != MouseButtonState.Pressed
-            || !GetCursorPos(out _dragStartCursorPosition))
+            || !NativeInput.TryGetCursorPosition(out _dragStartCursorPosition))
         {
             return false;
         }
@@ -72,7 +71,7 @@ internal sealed class MascotBoundsController : IDisposable
 
     public bool MoveDrag()
     {
-        if (!_isDragging || !GetCursorPos(out var cursorPosition))
+        if (!_isDragging || !NativeInput.TryGetCursorPosition(out var cursorPosition))
         {
             return false;
         }
@@ -101,7 +100,7 @@ internal sealed class MascotBoundsController : IDisposable
 
     public void BeginResize(Thumb resizeHandle)
     {
-        if (!GetCursorPos(out _resizeStartCursorPosition))
+        if (!NativeInput.TryGetCursorPosition(out _resizeStartCursorPosition))
         {
             return;
         }
@@ -137,7 +136,7 @@ internal sealed class MascotBoundsController : IDisposable
 
     private void ApplyResizeFromCursor()
     {
-        if (!GetCursorPos(out var cursorPosition))
+        if (!NativeInput.TryGetCursorPosition(out var cursorPosition))
         {
             return;
         }
@@ -221,17 +220,6 @@ internal sealed class MascotBoundsController : IDisposable
         }
 
         return false;
-    }
-
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetCursorPos(out NativePoint point);
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct NativePoint
-    {
-        public int X;
-        public int Y;
     }
 
     [Flags]

@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 
-namespace Baba.Infrastructure;
+namespace Baba.Presentation;
 
 internal static class NativeWindowStyles
 {

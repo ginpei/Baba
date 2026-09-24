@@ -1,9 +1,8 @@
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 
-namespace Baba.Infrastructure;
+namespace Baba.Presentation;
 
 internal sealed class MascotInteractionController
 {
@@ -114,7 +113,7 @@ internal sealed class MascotInteractionController
 
     private bool IsCursorOverWindow()
     {
-        if (!GetCursorPos(out var cursorPosition))
+        if (!NativeInput.TryGetCursorPosition(out var cursorPosition))
         {
             return false;
         }
@@ -130,7 +129,7 @@ internal sealed class MascotInteractionController
 
     private bool IsCursorOverMascotArea()
     {
-        if (!GetCursorPos(out var cursorPosition))
+        if (!NativeInput.TryGetCursorPosition(out var cursorPosition))
         {
             return false;
         }
@@ -144,14 +143,4 @@ internal sealed class MascotInteractionController
             && cursorPosition.Y < bottomRight.Y;
     }
 
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetCursorPos(out NativePoint point);
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct NativePoint
-    {
-        public int X;
-        public int Y;
-    }
 }

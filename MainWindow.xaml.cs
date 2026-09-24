@@ -1,33 +1,28 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using Baba.Infrastructure;
-using Baba.Services;
+using Baba.Application;
+using Baba.Configuration;
+using Baba.Presentation;
 
 namespace Baba;
 
 public partial class MainWindow : Window
 {
     private const double ScreenMargin = 12;
-    private const int VkControl = 0x11;
-
     private readonly MascotBoundsController _boundsController;
     private readonly MascotInteractionController _interactionController;
-    private readonly SettingsRepository _settingsRepository;
     private readonly TrayIconService _trayIcon;
     private readonly SpeechBubbleWindow _speechWindow;
-    private readonly TextTailWatcher? _textWatcher;
     private readonly DispatcherTimer _speechTimer;
     private readonly DispatcherTimer _interactionTimer;
-    private readonly string _dataDirectory;
+    private BabaApplicationSession? _applicationSession;
     private BabaSettings? _settings;
     private bool _isExiting;
     private bool _isSpeechVisible;
@@ -45,14 +40,9 @@ public partial class MainWindow : Window
             MascotArea,
             ResizeFrame,
             ResizeHandles,
-            IsControlPressed);
+            NativeInput.IsControlPressed);
         _interactionController.MascotHidden += (_, _) => _speechWindow.Hide();
         _interactionController.MascotShown += (_, _) => ShowSpeechWindow();
-
-        _dataDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Baba");
-        _settingsRepository = new SettingsRepository(_dataDirectory);
 
         _speechTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
         _speechTimer.Tick += (_, _) =>
@@ -74,58 +64,26 @@ public partial class MainWindow : Window
             OpenDataDirectory,
             ExitApplication);
 
-        try
-        {
-            var settings = BabaDataDirectoryInitializer.Initialize(
-                _settingsRepository,
-                Path.Combine(AppContext.BaseDirectory, "Assets", "mascot.png"));
-            _settings = settings;
-            _boundsController.ApplySavedSize(settings.WindowWidth, settings.WindowHeight);
-            _textWatcher = new TextTailWatcher(
-                settings.SpeechFilePath,
-                CreateSpeechLinePattern(settings.SpeechLinePattern));
-            _textWatcher.LastLineChanged += OnLastLineChanged;
-            _textWatcher.ReadFailed += OnTextReadFailed;
-            _textWatcher.Start();
-
-            LoadMascotImage(settings.MascotImagePath);
-            ShowSpeech($"Monitoring speech file:{Environment.NewLine}{settings.SpeechFilePath}");
-        }
-        catch (Exception exception) when (
-            exception is ArgumentException
-            or IOException
-            or JsonException
-            or UnauthorizedAccessException)
-        {
-            ShowSpeech($"Could not load Baba settings: {exception.Message}");
-        }
     }
+
+    internal void Configure(BabaApplicationSession applicationSession)
+    {
+        _applicationSession = applicationSession;
+        _settings = applicationSession.Settings;
+        _boundsController.ApplySavedSize(_settings.WindowWidth, _settings.WindowHeight);
+        applicationSession.SpeechUpdated += OnLastLineChanged;
+        applicationSession.SpeechReadFailed += OnTextReadFailed;
+
+        LoadMascotImage(_settings.MascotImagePath);
+    }
+
+    internal void ShowStartupError(Exception exception) =>
+        ShowSpeech($"Could not load Baba settings: {exception.Message}");
 
     private void OnSourceInitialized(object? sender, EventArgs e)
     {
         _interactionController.Initialize();
         _interactionTimer.Start();
-    }
-
-    private static Regex? CreateSpeechLinePattern(string? pattern)
-    {
-        if (string.IsNullOrWhiteSpace(pattern))
-        {
-            return null;
-        }
-
-        var regex = new Regex(
-            pattern,
-            RegexOptions.CultureInvariant,
-            TimeSpan.FromMilliseconds(100));
-        if (regex.GetGroupNumbers().Length < 2)
-        {
-            throw new ArgumentException(
-                "SpeechLinePattern must contain a capture group for the speech text.",
-                nameof(pattern));
-        }
-
-        return regex;
     }
 
     private void PositionInitialWindow(object? sender, EventArgs e)
@@ -150,11 +108,17 @@ public partial class MainWindow : Window
 
     private void OpenDataDirectory()
     {
+        if (_applicationSession is null)
+        {
+            ShowSpeech("Could not open data folder: Baba has not been configured.");
+            return;
+        }
+
         try
         {
             Process.Start(new ProcessStartInfo
             {
-                FileName = _dataDirectory,
+                FileName = _applicationSession.DataDirectory,
                 UseShellExecute = true,
             });
         }
@@ -257,7 +221,7 @@ public partial class MainWindow : Window
 
     private void BeginWindowDrag(object sender, MouseButtonEventArgs e)
     {
-        if (!IsControlPressed() || !_boundsController.TryBeginDrag(sender, e))
+        if (!NativeInput.IsControlPressed() || !_boundsController.TryBeginDrag(sender, e))
         {
             return;
         }
@@ -326,7 +290,7 @@ public partial class MainWindow : Window
         try
         {
             _settings = _settings.WithWindowBounds(Left, Top, Width, Height);
-            _settingsRepository.Save(_settings);
+            _applicationSession?.SaveSettings(_settings);
         }
         catch (Exception exception) when (exception is ArgumentOutOfRangeException or IOException or UnauthorizedAccessException)
         {
@@ -337,7 +301,7 @@ public partial class MainWindow : Window
 
     private void ShowContextMenu(object sender, MouseButtonEventArgs e)
     {
-        if (!IsControlPressed() || Opacity == 0)
+        if (!NativeInput.IsControlPressed() || Opacity == 0)
         {
             return;
         }
@@ -350,8 +314,6 @@ public partial class MainWindow : Window
     {
         _interactionController.Update(_boundsController.IsResizing);
     }
-
-    private static bool IsControlPressed() => (GetAsyncKeyState(VkControl) & 0x8000) != 0;
 
     private void OnClosing(object? sender, CancelEventArgs e)
     {
@@ -383,14 +345,10 @@ public partial class MainWindow : Window
         _isExiting = true;
         _interactionTimer.Stop();
         _boundsController.Dispose();
-        _textWatcher?.Dispose();
         _trayIcon.Dispose();
         _speechWindow.Close();
         Close();
         System.Windows.Application.Current.Shutdown();
     }
-
-    [DllImport("user32.dll")]
-    private static extern short GetAsyncKeyState(int virtualKeyCode);
 
 }

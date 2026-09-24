@@ -2,7 +2,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
 
-namespace Baba.Services;
+namespace Baba.Infrastructure;
 
 public sealed class TextTailWatcher : IDisposable
 {
