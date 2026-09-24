@@ -8,6 +8,7 @@ public sealed class TextTailWatcher : IDisposable
     private readonly string _filePath;
     private readonly FileSystemWatcher _watcher;
     private readonly System.Threading.Timer _debounceTimer;
+    private readonly System.Threading.Timer? _pollTimer;
     private readonly object _syncRoot = new();
     private string? _lastLine;
     private bool _isDisposed;
@@ -23,6 +24,10 @@ public sealed class TextTailWatcher : IDisposable
         _watcher.Created += OnFileChanged;
         _watcher.Renamed += OnFileRenamed;
         _debounceTimer = new System.Threading.Timer(ReadLatestLine);
+        if (IsUncPath(_filePath))
+        {
+            _pollTimer = new System.Threading.Timer(_ => ScheduleRead());
+        }
     }
 
     public event EventHandler<string>? LastLineChanged;
@@ -37,6 +42,7 @@ public sealed class TextTailWatcher : IDisposable
         }
 
         _watcher.EnableRaisingEvents = true;
+        _pollTimer?.Change(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
         ScheduleRead();
     }
 
@@ -116,6 +122,10 @@ public sealed class TextTailWatcher : IDisposable
             _watcher.EnableRaisingEvents = false;
             _watcher.Dispose();
             _debounceTimer.Dispose();
+            _pollTimer?.Dispose();
         }
     }
+
+    private static bool IsUncPath(string path) =>
+        path.StartsWith(@"\\", StringComparison.Ordinal);
 }

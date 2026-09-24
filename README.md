@@ -16,6 +16,8 @@ On first launch, Baba creates the following directory and an empty `speech.txt` 
 
 Appending a non-whitespace line to `speech.txt` displays that line in the speech bubble.
 
+For speech files on UNC paths, including `\\wsl.localhost\...`, Baba polls once per second as a fallback because file-change notifications from network-backed filesystems can be unreliable.
+
 The project-provided `Assets\mascot.png` is the default image. To use a different transparent PNG, place it as `mascot.png` in the following location and restart the application. The custom image takes precedence over the default.
 
 ```text
