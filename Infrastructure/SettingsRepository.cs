@@ -34,9 +34,20 @@ public sealed class SettingsRepository
         var settings = JsonSerializer.Deserialize<BabaSettings>(File.ReadAllText(configPath))
             ?? throw new JsonException($"The configuration file '{configPath}' is empty.");
         if (string.IsNullOrWhiteSpace(settings.MascotImagePath)
-            || string.IsNullOrWhiteSpace(settings.SpeechFilePath))
+            || settings.SpeechSources is null
+            || settings.SpeechSources.Count == 0)
         {
-            throw new JsonException($"The configuration file '{configPath}' requires MascotImagePath and SpeechFilePath.");
+            throw new JsonException(
+                $"The configuration file '{configPath}' requires MascotImagePath and at least one SpeechSources entry.");
+        }
+
+        foreach (var source in settings.SpeechSources)
+        {
+            if (source is null || string.IsNullOrWhiteSpace(source.SpeechFilePath))
+            {
+                throw new JsonException(
+                    $"Every SpeechSources entry in '{configPath}' requires SpeechFilePath.");
+            }
         }
 
         return settings;

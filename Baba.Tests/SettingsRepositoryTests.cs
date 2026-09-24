@@ -23,8 +23,18 @@ public sealed class SettingsRepositoryTests
         var settings = new BabaSettings
         {
             MascotImagePath = "mascot.png",
-            SpeechFilePath = "moments.txt",
-            SpeechLinePattern = @"^say: (.+)$",
+            SpeechSources =
+            [
+                new SpeechSourceSettings
+                {
+                    SpeechFilePath = "moments.txt",
+                    SpeechLinePattern = @"^say: (.+)$",
+                },
+                new SpeechSourceSettings
+                {
+                    SpeechFilePath = "other.log",
+                },
+            ],
             WindowLeft = -12.5,
             WindowTop = 34.5,
             WindowWidth = 300,
@@ -36,8 +46,11 @@ public sealed class SettingsRepositoryTests
         var loaded = repository.Load();
         Assert.NotNull(loaded);
         Assert.Equal(settings.MascotImagePath, loaded.MascotImagePath);
-        Assert.Equal(settings.SpeechFilePath, loaded.SpeechFilePath);
-        Assert.Equal(settings.SpeechLinePattern, loaded.SpeechLinePattern);
+        Assert.Equal(2, loaded.SpeechSources.Count);
+        Assert.Equal("moments.txt", loaded.SpeechSources[0].SpeechFilePath);
+        Assert.Equal(@"^say: (.+)$", loaded.SpeechSources[0].SpeechLinePattern);
+        Assert.Equal("other.log", loaded.SpeechSources[1].SpeechFilePath);
+        Assert.Null(loaded.SpeechSources[1].SpeechLinePattern);
         Assert.Equal(settings.WindowLeft, loaded.WindowLeft);
         Assert.Equal(settings.WindowTop, loaded.WindowTop);
         Assert.Equal(settings.WindowWidth, loaded.WindowWidth);
@@ -52,13 +65,21 @@ public sealed class SettingsRepositoryTests
         repository.Save(new BabaSettings
         {
             MascotImagePath = "mascot.png",
-            SpeechFilePath = "moments.txt",
+            SpeechSources =
+            [
+                new SpeechSourceSettings
+                {
+                    SpeechFilePath = "moments.txt",
+                },
+            ],
         });
 
         using var json = JsonDocument.Parse(
             File.ReadAllText(System.IO.Path.Combine(directory.Path, "baba.json")));
 
-        Assert.False(json.RootElement.TryGetProperty(nameof(BabaSettings.SpeechLinePattern), out _));
+        var speechSource = Assert.Single(
+            json.RootElement.GetProperty(nameof(BabaSettings.SpeechSources)).EnumerateArray());
+        Assert.False(speechSource.TryGetProperty(nameof(SpeechSourceSettings.SpeechLinePattern), out _));
         Assert.False(json.RootElement.TryGetProperty(nameof(BabaSettings.WindowLeft), out _));
         Assert.False(json.RootElement.TryGetProperty(nameof(BabaSettings.WindowTop), out _));
         Assert.False(json.RootElement.TryGetProperty(nameof(BabaSettings.WindowWidth), out _));
@@ -69,8 +90,12 @@ public sealed class SettingsRepositoryTests
     [InlineData("{")]
     [InlineData("null")]
     [InlineData("""{"MascotImagePath":"mascot.png"}""")]
-    [InlineData("""{"MascotImagePath":" ","SpeechFilePath":"moments.txt"}""")]
-    [InlineData("""{"MascotImagePath":"mascot.png","SpeechFilePath":" "}""")]
+    [InlineData("""{"MascotImagePath":"mascot.png","SpeechFilePath":"moments.txt"}""")]
+    [InlineData("""{"MascotImagePath":" ","SpeechSources":[{"SpeechFilePath":"moments.txt"}]}""")]
+    [InlineData("""{"MascotImagePath":"mascot.png","SpeechSources":[]}""")]
+    [InlineData("""{"MascotImagePath":"mascot.png","SpeechSources":[null]}""")]
+    [InlineData("""{"MascotImagePath":"mascot.png","SpeechSources":[{}]}""")]
+    [InlineData("""{"MascotImagePath":"mascot.png","SpeechSources":[{"SpeechFilePath":" "}]}""")]
     public void Load_RejectsInvalidConfiguration(string json)
     {
         using var directory = new TemporaryDirectory();

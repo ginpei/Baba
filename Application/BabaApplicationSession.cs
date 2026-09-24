@@ -6,18 +6,18 @@ namespace Baba.Application;
 internal sealed class BabaApplicationSession : IDisposable
 {
     private readonly SettingsRepository _settingsRepository;
-    private readonly TextTailWatcher _textWatcher;
+    private readonly IReadOnlyList<TextTailWatcher> _textWatchers;
 
     private BabaApplicationSession(
         string dataDirectory,
         BabaSettings settings,
         SettingsRepository settingsRepository,
-        TextTailWatcher textWatcher)
+        IReadOnlyList<TextTailWatcher> textWatchers)
     {
         DataDirectory = dataDirectory;
         Settings = settings;
         _settingsRepository = settingsRepository;
-        _textWatcher = textWatcher;
+        _textWatchers = textWatchers;
     }
 
     public string DataDirectory { get; }
@@ -26,30 +26,71 @@ internal sealed class BabaApplicationSession : IDisposable
 
     public event EventHandler<Exception>? SpeechReadFailed
     {
-        add => _textWatcher.ReadFailed += value;
-        remove => _textWatcher.ReadFailed -= value;
+        add
+        {
+            foreach (var watcher in _textWatchers)
+            {
+                watcher.ReadFailed += value;
+            }
+        }
+        remove
+        {
+            foreach (var watcher in _textWatchers)
+            {
+                watcher.ReadFailed -= value;
+            }
+        }
     }
 
     public event EventHandler<string>? SpeechUpdated
     {
-        add => _textWatcher.LastLineChanged += value;
-        remove => _textWatcher.LastLineChanged -= value;
+        add
+        {
+            foreach (var watcher in _textWatchers)
+            {
+                watcher.LastLineChanged += value;
+            }
+        }
+        remove
+        {
+            foreach (var watcher in _textWatchers)
+            {
+                watcher.LastLineChanged -= value;
+            }
+        }
     }
 
     public static BabaApplicationSession Create(string dataDirectory, string defaultImagePath)
     {
         var settingsRepository = new SettingsRepository(dataDirectory);
         var settings = BabaDataDirectoryInitializer.Initialize(settingsRepository, defaultImagePath);
-        var textWatcher = new TextTailWatcher(
-            settings.SpeechFilePath,
-            SpeechLineParser.CreatePattern(settings.SpeechLinePattern));
+        var speechSources = settings.SpeechSources
+            .Select(source => (
+                source.SpeechFilePath,
+                LinePattern: SpeechLineParser.CreatePattern(source.SpeechLinePattern)))
+            .ToArray();
+        var textWatchers = speechSources
+            .Select(source => new TextTailWatcher(source.SpeechFilePath, source.LinePattern))
+            .ToArray();
 
-        return new BabaApplicationSession(dataDirectory, settings, settingsRepository, textWatcher);
+        return new BabaApplicationSession(dataDirectory, settings, settingsRepository, textWatchers);
     }
 
     public void SaveSettings(BabaSettings settings) => _settingsRepository.Save(settings);
 
-    public void Start() => _textWatcher.Start();
+    public void Start()
+    {
+        foreach (var watcher in _textWatchers)
+        {
+            watcher.Start();
+        }
+    }
 
-    public void Dispose() => _textWatcher.Dispose();
+    public void Dispose()
+    {
+        foreach (var watcher in _textWatchers)
+        {
+            watcher.Dispose();
+        }
+    }
 }

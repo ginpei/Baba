@@ -19,11 +19,12 @@ public sealed class BabaDataDirectoryInitializerTests
         var settings = BabaDataDirectoryInitializer.Initialize(repository, defaultImagePath);
 
         Assert.Equal(System.IO.Path.Combine(dataDirectory, "mascot.png"), settings.MascotImagePath);
-        Assert.Equal(System.IO.Path.Combine(dataDirectory, "moments.txt"), settings.SpeechFilePath);
-        Assert.Contains("Welcome to Baba.", File.ReadAllText(settings.SpeechFilePath));
+        var source = Assert.Single(settings.SpeechSources);
+        Assert.Equal(System.IO.Path.Combine(dataDirectory, "moments.txt"), source.SpeechFilePath);
+        Assert.Contains("Welcome to Baba.", File.ReadAllText(source.SpeechFilePath));
         Assert.Equal(imageContents, File.ReadAllBytes(settings.MascotImagePath));
         Assert.Equal(settings.MascotImagePath, repository.Load()?.MascotImagePath);
-        Assert.Equal(settings.SpeechFilePath, repository.Load()?.SpeechFilePath);
+        Assert.Equal(source.SpeechFilePath, repository.Load()?.SpeechSources[0].SpeechFilePath);
     }
 
     [Fact]
@@ -34,6 +35,7 @@ public sealed class BabaDataDirectoryInitializerTests
         var repository = new SettingsRepository(dataDirectory);
         var imagePath = System.IO.Path.Combine(dataDirectory, "images", "mascot.png");
         var speechPath = System.IO.Path.Combine(dataDirectory, "text", "moments.txt");
+        var filteredSpeechPath = System.IO.Path.Combine(dataDirectory, "text", "filtered.log");
         Directory.CreateDirectory(System.IO.Path.GetDirectoryName(imagePath)!);
         Directory.CreateDirectory(System.IO.Path.GetDirectoryName(speechPath)!);
         var imageContents = new byte[] { 5, 6, 7 };
@@ -42,8 +44,18 @@ public sealed class BabaDataDirectoryInitializerTests
         repository.Save(new BabaSettings
         {
             MascotImagePath = System.IO.Path.Combine("images", "mascot.png"),
-            SpeechFilePath = System.IO.Path.Combine("text", "moments.txt"),
-            SpeechLinePattern = @"^say: (.+)$",
+            SpeechSources =
+            [
+                new SpeechSourceSettings
+                {
+                    SpeechFilePath = System.IO.Path.Combine("text", "moments.txt"),
+                },
+                new SpeechSourceSettings
+                {
+                    SpeechFilePath = System.IO.Path.Combine("text", "filtered.log"),
+                    SpeechLinePattern = @"^say: (.+)$",
+                },
+            ],
             WindowLeft = 11,
             WindowTop = 22,
             WindowWidth = 333,
@@ -55,10 +67,15 @@ public sealed class BabaDataDirectoryInitializerTests
             System.IO.Path.Combine(directory.Path, "unused-default.png"));
 
         Assert.Equal(System.IO.Path.GetFullPath(imagePath), settings.MascotImagePath);
-        Assert.Equal(System.IO.Path.GetFullPath(speechPath), settings.SpeechFilePath);
+        Assert.Equal(2, settings.SpeechSources.Count);
+        Assert.Equal(System.IO.Path.GetFullPath(speechPath), settings.SpeechSources[0].SpeechFilePath);
+        Assert.Equal(
+            System.IO.Path.GetFullPath(filteredSpeechPath),
+            settings.SpeechSources[1].SpeechFilePath);
         Assert.Equal("Existing speech", File.ReadAllText(speechPath));
         Assert.Equal(imageContents, File.ReadAllBytes(imagePath));
-        Assert.Equal(@"^say: (.+)$", settings.SpeechLinePattern);
+        Assert.True(File.Exists(filteredSpeechPath));
+        Assert.Equal(@"^say: (.+)$", settings.SpeechSources[1].SpeechLinePattern);
         Assert.Equal(333, settings.WindowWidth);
         Assert.Equal(444, settings.WindowHeight);
     }
@@ -75,13 +92,19 @@ public sealed class BabaDataDirectoryInitializerTests
         repository.Save(new BabaSettings
         {
             MascotImagePath = System.IO.Path.Combine("images", "mascot.png"),
-            SpeechFilePath = "moments.txt",
+            SpeechSources =
+            [
+                new SpeechSourceSettings
+                {
+                    SpeechFilePath = "moments.txt",
+                },
+            ],
         });
 
         var settings = BabaDataDirectoryInitializer.Initialize(repository, defaultImagePath);
 
         Assert.Equal(imageContents, File.ReadAllBytes(settings.MascotImagePath));
-        Assert.True(File.Exists(settings.SpeechFilePath));
+        Assert.True(File.Exists(settings.SpeechSources[0].SpeechFilePath));
     }
 
     [Fact]
@@ -93,7 +116,13 @@ public sealed class BabaDataDirectoryInitializerTests
         repository.Save(new BabaSettings
         {
             MascotImagePath = "mascot.png",
-            SpeechFilePath = "moments.txt",
+            SpeechSources =
+            [
+                new SpeechSourceSettings
+                {
+                    SpeechFilePath = "moments.txt",
+                },
+            ],
         });
         var defaultImagePath = System.IO.Path.Combine(directory.Path, "missing.png");
 

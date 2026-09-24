@@ -22,15 +22,24 @@ public static class BabaDataDirectoryInitializer
         var resolvedSettings = new BabaSettings
         {
             MascotImagePath = ResolvePath(settings.MascotImagePath, settingsRepository.DataDirectory),
-            SpeechFilePath = ResolvePath(settings.SpeechFilePath, settingsRepository.DataDirectory),
-            SpeechLinePattern = settings.SpeechLinePattern,
+            SpeechSources = settings.SpeechSources
+                .Select(source => new SpeechSourceSettings
+                {
+                    SpeechFilePath = ResolvePath(source.SpeechFilePath, settingsRepository.DataDirectory),
+                    SpeechLinePattern = source.SpeechLinePattern,
+                })
+                .ToArray(),
             WindowWidth = settings.WindowWidth,
             WindowHeight = settings.WindowHeight,
             WindowLeft = settings.WindowLeft,
             WindowTop = settings.WindowTop,
         };
 
-        EnsureSpeechFile(resolvedSettings.SpeechFilePath, isNewConfig);
+        foreach (var source in resolvedSettings.SpeechSources)
+        {
+            EnsureSpeechFile(source.SpeechFilePath, isNewConfig);
+        }
+
         EnsureImageFile(resolvedSettings.MascotImagePath, defaultImagePath);
 
         if (isNewConfig)
@@ -44,7 +53,13 @@ public static class BabaDataDirectoryInitializer
     private static BabaSettings CreateDefaultSettings(string dataDirectory) => new()
     {
         MascotImagePath = Path.Combine(dataDirectory, "mascot.png"),
-        SpeechFilePath = Path.Combine(dataDirectory, "moments.txt"),
+        SpeechSources =
+        [
+            new SpeechSourceSettings
+            {
+                SpeechFilePath = Path.Combine(dataDirectory, "moments.txt"),
+            },
+        ],
     };
 
     private static string ResolvePath(string path, string dataDirectory) =>

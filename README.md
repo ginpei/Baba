@@ -44,8 +44,15 @@ On first launch, Baba creates `%LocalAppData%\Baba\baba.json`, `%LocalAppData%\B
 ```json
 {
   "MascotImagePath": "C:\\Users\\<user>\\AppData\\Local\\Baba\\mascot.png",
-  "SpeechFilePath": "C:\\Users\\<user>\\AppData\\Local\\Baba\\moments.txt",
-  "SpeechLinePattern": "^- ....-..-.. ..:..:.. (.+)$",
+  "SpeechSources": [
+    {
+      "SpeechFilePath": "C:\\Users\\<user>\\AppData\\Local\\Baba\\moments.txt"
+    },
+    {
+      "SpeechFilePath": "C:\\logs\\application.log",
+      "SpeechLinePattern": "^- ....-..-.. ..:..:.. (.+)$"
+    }
+  ],
   "WindowWidth": 320,
   "WindowHeight": 390,
   "WindowLeft": 1588,
@@ -66,11 +73,16 @@ For example, if your log line is formatted as `- YYYY-MM-DD HH:mm:ss <message>` 
 - 2026-09-23 17:37:24 Reply file is ready!
 ```
 
-Set `SpeechLinePattern` in `baba.json` to enable extraction:
+Each entry in `SpeechSources` monitors one file. Set its optional `SpeechLinePattern` to extract speech from matching lines:
 
 ```json
 {
-  "SpeechLinePattern": "^- ....-..-.. ..:..:.. (.+)$"
+  "SpeechSources": [
+    {
+      "SpeechFilePath": "C:\\logs\\application.log",
+      "SpeechLinePattern": "^- ....-..-.. ..:..:.. (.+)$"
+    }
+  ]
 }
 ```
 

@@ -10,8 +10,14 @@ public sealed class BabaSettingsTests
         var settings = new BabaSettings
         {
             MascotImagePath = "mascot.png",
-            SpeechFilePath = "moments.txt",
-            SpeechLinePattern = @"^say: (.+)$",
+            SpeechSources =
+            [
+                new SpeechSourceSettings
+                {
+                    SpeechFilePath = "moments.txt",
+                    SpeechLinePattern = @"^say: (.+)$",
+                },
+            ],
             WindowLeft = 1,
             WindowTop = 2,
             WindowWidth = 300,
@@ -21,8 +27,9 @@ public sealed class BabaSettingsTests
         var updated = settings.WithWindowBounds(-10, 20, 500, 600);
 
         Assert.Equal("mascot.png", updated.MascotImagePath);
-        Assert.Equal("moments.txt", updated.SpeechFilePath);
-        Assert.Equal(@"^say: (.+)$", updated.SpeechLinePattern);
+        Assert.Single(updated.SpeechSources);
+        Assert.Equal("moments.txt", updated.SpeechSources[0].SpeechFilePath);
+        Assert.Equal(@"^say: (.+)$", updated.SpeechSources[0].SpeechLinePattern);
         Assert.Equal(-10, updated.WindowLeft);
         Assert.Equal(20, updated.WindowTop);
         Assert.Equal(500, updated.WindowWidth);
