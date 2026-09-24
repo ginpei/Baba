@@ -13,6 +13,7 @@
     <Content Include="Assets\mascot.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Compile Remove="Baba.Tests\**\*.cs" />
   </ItemGroup>
 
 </Project>

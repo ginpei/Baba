@@ -98,7 +98,7 @@ public sealed class TextTailWatcher : IDisposable
                 string? lastLine = null;
                 while (reader.ReadLine() is { } line)
                 {
-                    var extractedLine = ExtractSpeechLine(line);
+                    var extractedLine = SpeechLineParser.Extract(line, _linePattern);
                     if (extractedLine is not null)
                     {
                         lastLine = extractedLine;
@@ -114,23 +114,6 @@ public sealed class TextTailWatcher : IDisposable
         }
 
         return null;
-    }
-
-    private string? ExtractSpeechLine(string line)
-    {
-        if (_linePattern is null)
-        {
-            return string.IsNullOrWhiteSpace(line) ? null : line.Trim();
-        }
-
-        var match = _linePattern.Match(line);
-        if (!match.Success)
-        {
-            return null;
-        }
-
-        var message = match.Groups[1].Value.Trim();
-        return string.IsNullOrWhiteSpace(message) ? null : message;
     }
 
     public void Dispose()

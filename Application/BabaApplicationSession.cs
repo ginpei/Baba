@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Baba.Configuration;
 using Baba.Infrastructure;
 
@@ -43,7 +42,7 @@ internal sealed class BabaApplicationSession : IDisposable
         var settings = BabaDataDirectoryInitializer.Initialize(settingsRepository, defaultImagePath);
         var textWatcher = new TextTailWatcher(
             settings.SpeechFilePath,
-            CreateSpeechLinePattern(settings.SpeechLinePattern));
+            SpeechLineParser.CreatePattern(settings.SpeechLinePattern));
 
         return new BabaApplicationSession(dataDirectory, settings, settingsRepository, textWatcher);
     }
@@ -53,25 +52,4 @@ internal sealed class BabaApplicationSession : IDisposable
     public void Start() => _textWatcher.Start();
 
     public void Dispose() => _textWatcher.Dispose();
-
-    private static Regex? CreateSpeechLinePattern(string? pattern)
-    {
-        if (string.IsNullOrWhiteSpace(pattern))
-        {
-            return null;
-        }
-
-        var regex = new Regex(
-            pattern,
-            RegexOptions.CultureInvariant,
-            TimeSpan.FromMilliseconds(100));
-        if (regex.GetGroupNumbers().Length < 2)
-        {
-            throw new ArgumentException(
-                "SpeechLinePattern must contain a capture group for the speech text.",
-                nameof(pattern));
-        }
-
-        return regex;
-    }
 }

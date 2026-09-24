@@ -9,6 +9,12 @@ dotnet build
 dotnet run
 ```
 
+Run the unit tests with:
+
+```powershell
+dotnet test Baba.Tests\Baba.Tests.csproj
+```
+
 On first launch, Baba creates the following directory and an empty `moments.txt` file:
 
 ```text
