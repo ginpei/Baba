@@ -2,9 +2,10 @@
 
 Baba is a WPF desktop mascot. Use the notification-area icon to show, hide, or exit the application.
 
-## Run
+## Build and Run
 
 ```powershell
+dotnet build
 dotnet run
 ```
 
