@@ -42,7 +42,13 @@ public partial class MainWindow : Window
             ResizeFrame,
             ResizeHandles,
             NativeInput.IsControlPressed);
-        _interactionController.SpeechBubbleHidden += (_, _) => _speechWindow.Opacity = 0;
+        _interactionController.SpeechBubbleHidden += (_, _) =>
+        {
+            if (_isSpeechVisible)
+            {
+                _speechWindow.AnimateOut(false);
+            }
+        };
         _interactionController.SpeechBubbleShown += (_, _) => ShowSpeechWindow();
         _speechWindow.DismissRequested += (_, _) => DismissSpeech();
 
@@ -195,22 +201,17 @@ public partial class MainWindow : Window
         }
 
         _speechWindow.SetSpeech(_currentSpeechText);
-        if (!_speechWindow.IsVisible)
-        {
-            _speechWindow.Opacity = 0;
-            _speechWindow.Show();
-        }
-
+        _speechWindow.PrepareToShow();
         _speechWindow.UpdateLayout();
         PositionSpeechWindow();
-        _speechWindow.Opacity = 1;
+        _speechWindow.AnimateIn();
     }
 
     private void DismissSpeech()
     {
         _speechTimer.Stop();
         _isSpeechVisible = false;
-        _speechWindow.Hide();
+        _speechWindow.AnimateOut(true);
     }
 
     private void PositionSpeechWindow()
@@ -379,7 +380,7 @@ public partial class MainWindow : Window
     private void HideMascot()
     {
         Hide();
-        _speechWindow.Hide();
+        _speechWindow.HideImmediately();
     }
 
     private void ExitApplication()

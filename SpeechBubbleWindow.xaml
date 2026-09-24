@@ -5,19 +5,29 @@
         SizeToContent="Height"
         AllowsTransparency="True"
         Background="Transparent"
-        Opacity="0"
         PreviewMouseDown="DismissSpeech"
         ShowInTaskbar="False"
         Topmost="True"
         WindowStyle="None">
-    <Border Padding="14,10"
-            Background="#FFFDF7"
-            BorderBrush="#54504B"
-            BorderThickness="2"
-            CornerRadius="14">
-        <TextBlock x:Name="SpeechText"
-                   Foreground="#252321"
-                   FontSize="16"
-                   TextWrapping="Wrap" />
-    </Border>
+    <Grid>
+        <Border x:Name="Bubble"
+                Margin="0,0,0,6"
+                Padding="14,10"
+                Background="#FFFDF7"
+                BorderBrush="#54504B"
+                BorderThickness="2"
+                CornerRadius="14"
+                RenderTransformOrigin="0.5,1">
+            <Border.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform x:Name="BubbleScale" />
+                    <TranslateTransform x:Name="BubbleTranslation" />
+                </TransformGroup>
+            </Border.RenderTransform>
+            <TextBlock x:Name="SpeechText"
+                       Foreground="#252321"
+                       FontSize="16"
+                       TextWrapping="Wrap" />
+        </Border>
+    </Grid>
 </Window>
