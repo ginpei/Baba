@@ -15,6 +15,7 @@ internal sealed class MascotBoundsController : IDisposable
     private readonly DispatcherTimer _resizeTimer;
     private readonly Window _window;
     private bool _isDragging;
+    private bool _hasDragMoved;
     private ResizeDirection _resizeDirection;
     private NativePoint _resizeStartCursorPosition;
     private double _resizeStartHeight;
@@ -63,6 +64,7 @@ internal sealed class MascotBoundsController : IDisposable
         }
 
         _isDragging = true;
+        _hasDragMoved = false;
         _dragStartLeft = _window.Left;
         _dragStartTop = _window.Top;
         Mouse.Capture((IInputElement)source);
@@ -77,19 +79,25 @@ internal sealed class MascotBoundsController : IDisposable
         }
 
         var dpi = VisualTreeHelper.GetDpi(_window);
-        _window.Left = _dragStartLeft + (cursorPosition.X - _dragStartCursorPosition.X) / dpi.DpiScaleX;
-        _window.Top = _dragStartTop + (cursorPosition.Y - _dragStartCursorPosition.Y) / dpi.DpiScaleY;
+        var horizontalChange = (cursorPosition.X - _dragStartCursorPosition.X) / dpi.DpiScaleX;
+        var verticalChange = (cursorPosition.Y - _dragStartCursorPosition.Y) / dpi.DpiScaleY;
+        _hasDragMoved |= Math.Abs(horizontalChange) >= SystemParameters.MinimumHorizontalDragDistance
+            || Math.Abs(verticalChange) >= SystemParameters.MinimumVerticalDragDistance;
+        _window.Left = _dragStartLeft + horizontalChange;
+        _window.Top = _dragStartTop + verticalChange;
         return true;
     }
 
-    public bool EndDrag()
+    public bool EndDrag(out bool hasMoved)
     {
         if (!_isDragging)
         {
+            hasMoved = false;
             return false;
         }
 
         MoveDrag();
+        hasMoved = _hasDragMoved;
         _isDragging = false;
         Mouse.Capture(null);
         BoundsChanged?.Invoke(this, EventArgs.Empty);

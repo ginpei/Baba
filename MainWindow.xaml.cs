@@ -171,6 +171,16 @@ public partial class MainWindow : Window
     private void ShowSpeech(string text)
     {
         _currentSpeechText = text;
+        ShowCurrentSpeech();
+    }
+
+    private void ShowCurrentSpeech()
+    {
+        if (_currentSpeechText is null)
+        {
+            return;
+        }
+
         _isSpeechVisible = true;
         ShowSpeechWindow();
         _speechTimer.Stop();
@@ -241,9 +251,14 @@ public partial class MainWindow : Window
 
     private void EndWindowDrag(object sender, MouseButtonEventArgs e)
     {
-        if (!_boundsController.EndDrag())
+        if (!_boundsController.EndDrag(out var hasMoved))
         {
             return;
+        }
+
+        if (!hasMoved)
+        {
+            ShowCurrentSpeech();
         }
 
         e.Handled = true;
