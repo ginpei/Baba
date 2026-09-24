@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Baba.Application;
@@ -20,6 +21,7 @@ public partial class MainWindow : Window
     private readonly MascotInteractionController _interactionController;
     private readonly TrayIconService _trayIcon;
     private readonly SpeechBubbleWindow _speechWindow;
+    private readonly DispatcherTimer _speechFadeTimer;
     private readonly DispatcherTimer _speechTimer;
     private readonly DispatcherTimer _interactionTimer;
     private BabaApplicationSession? _applicationSession;
@@ -52,6 +54,17 @@ public partial class MainWindow : Window
         _interactionController.SpeechBubbleShown += (_, _) => ShowSpeechWindow();
         _speechWindow.DismissRequested += (_, _) => DismissSpeech();
 
+        _speechFadeTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(7) };
+        _speechFadeTimer.Tick += (_, _) =>
+        {
+            _speechFadeTimer.Stop();
+            if (_isSpeechVisible)
+            {
+                _speechWindow.BeginAnimation(
+                    Window.OpacityProperty,
+                    new DoubleAnimation(0.8, TimeSpan.FromMilliseconds(300)));
+            }
+        };
         _speechTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
         _speechTimer.Tick += (_, _) => DismissSpeech();
         _interactionTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
@@ -185,8 +198,12 @@ public partial class MainWindow : Window
         }
 
         _isSpeechVisible = true;
+        _speechWindow.BeginAnimation(Window.OpacityProperty, null);
+        _speechWindow.Opacity = 1;
         ShowSpeechWindow();
         _speechTimer.Stop();
+        _speechFadeTimer.Stop();
+        _speechFadeTimer.Start();
         _speechTimer.Start();
     }
 
@@ -210,6 +227,7 @@ public partial class MainWindow : Window
     private void DismissSpeech()
     {
         _speechTimer.Stop();
+        _speechFadeTimer.Stop();
         _isSpeechVisible = false;
         _speechWindow.DismissAnimated();
     }
