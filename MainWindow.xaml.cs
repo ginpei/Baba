@@ -4,6 +4,7 @@ using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
@@ -90,7 +91,9 @@ public partial class MainWindow : Window
                 Path.Combine(AppContext.BaseDirectory, "Assets", "mascot.png"));
             _settings = settings;
             ApplySavedWindowSize(settings);
-            _textWatcher = new TextTailWatcher(settings.SpeechFilePath);
+            _textWatcher = new TextTailWatcher(
+                settings.SpeechFilePath,
+                CreateSpeechLinePattern(settings.SpeechLinePattern));
             _textWatcher.LastLineChanged += OnLastLineChanged;
             _textWatcher.ReadFailed += OnTextReadFailed;
             _textWatcher.Start();
@@ -113,6 +116,27 @@ public partial class MainWindow : Window
         _windowHandle = new WindowInteropHelper(this).Handle;
         SetClickThrough(!IsControlPressed());
         _interactionTimer.Start();
+    }
+
+    private static Regex? CreateSpeechLinePattern(string? pattern)
+    {
+        if (string.IsNullOrWhiteSpace(pattern))
+        {
+            return null;
+        }
+
+        var regex = new Regex(
+            pattern,
+            RegexOptions.CultureInvariant,
+            TimeSpan.FromMilliseconds(100));
+        if (regex.GetGroupNumbers().Length < 2)
+        {
+            throw new ArgumentException(
+                "SpeechLinePattern must contain a capture group for the speech text.",
+                nameof(pattern));
+        }
+
+        return regex;
     }
 
     private void PositionInitialWindow(object? sender, EventArgs e)

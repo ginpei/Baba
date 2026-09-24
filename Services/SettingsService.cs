@@ -10,6 +10,8 @@ public sealed class BabaSettings
 
     public string SpeechFilePath { get; init; } = string.Empty;
 
+    public string? SpeechLinePattern { get; init; }
+
     public double? WindowWidth { get; init; }
 
     public double? WindowHeight { get; init; }
@@ -49,6 +51,7 @@ public static class SettingsService
         {
             MascotImagePath = ResolvePath(settings.MascotImagePath, dataDirectory),
             SpeechFilePath = ResolvePath(settings.SpeechFilePath, dataDirectory),
+            SpeechLinePattern = settings.SpeechLinePattern,
             WindowWidth = settings.WindowWidth,
             WindowHeight = settings.WindowHeight,
             WindowLeft = settings.WindowLeft,
@@ -90,6 +93,7 @@ public static class SettingsService
         {
             MascotImagePath = settings.MascotImagePath,
             SpeechFilePath = settings.SpeechFilePath,
+            SpeechLinePattern = settings.SpeechLinePattern,
             WindowWidth = width,
             WindowHeight = height,
             WindowLeft = left,

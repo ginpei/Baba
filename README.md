@@ -38,6 +38,7 @@ On first launch, Baba creates `%LocalAppData%\Baba\baba.json`, `%LocalAppData%\B
 {
   "MascotImagePath": "C:\\Users\\<user>\\AppData\\Local\\Baba\\mascot.png",
   "SpeechFilePath": "C:\\Users\\<user>\\AppData\\Local\\Baba\\speech.txt",
+  "SpeechLinePattern": "^- ....-..-.. ..:..:.. (.+)$",
   "WindowWidth": 320,
   "WindowHeight": 390,
   "WindowLeft": 1588,
@@ -46,6 +47,29 @@ On first launch, Baba creates `%LocalAppData%\Baba\baba.json`, `%LocalAppData%\B
 ```
 
 When a configured speech or image file is missing, Baba creates the speech file or copies the bundled default image to the configured location.
+
+## Speech Line Pattern
+
+Log lines can include metadata such as timestamp. Each log entry must occupy one line.
+
+For example, if your log line is formatted as `- YYYY-MM-DD HH:mm:ss <message>` like the following:
+
+```
+- 2026-09-23 17:30:01 Summarizing nicely.
+- 2026-09-23 17:37:24 Reply file is ready!
+```
+
+Set `SpeechLinePattern` in `baba.json` to enable extraction:
+
+```json
+{
+  "SpeechLinePattern": "^- ....-..-.. ..:..:.. (.+)$"
+}
+```
+
+The expression must contain a first capture group for the speech text.
+
+When it is omitted, Baba displays the entire non-empty line.
 
 ## Interaction
 
