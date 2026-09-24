@@ -37,12 +37,13 @@ public partial class MainWindow : Window
         _boundsController.BoundsChanged += (_, _) => SaveWindowBounds();
         _interactionController = new MascotInteractionController(
             this,
+            _speechWindow,
             MascotArea,
             ResizeFrame,
             ResizeHandles,
             NativeInput.IsControlPressed);
-        _interactionController.MascotHidden += (_, _) => _speechWindow.Hide();
-        _interactionController.MascotShown += (_, _) => ShowSpeechWindow();
+        _interactionController.SpeechBubbleHidden += (_, _) => _speechWindow.Opacity = 0;
+        _interactionController.SpeechBubbleShown += (_, _) => ShowSpeechWindow();
 
         _speechTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
         _speechTimer.Tick += (_, _) =>
@@ -189,7 +190,10 @@ public partial class MainWindow : Window
 
     private void ShowSpeechWindow()
     {
-        if (!_hasPositionedInitially || !_isSpeechVisible || _currentSpeechText is null)
+        if (!_hasPositionedInitially
+            || !_interactionController.IsSpeechBubbleShown
+            || !_isSpeechVisible
+            || _currentSpeechText is null)
         {
             return;
         }

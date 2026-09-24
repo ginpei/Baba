@@ -10,19 +10,23 @@ internal sealed class MascotInteractionController
     private readonly FrameworkElement _mascotArea;
     private readonly UIElement _resizeFrame;
     private readonly UIElement _resizeHandles;
+    private readonly Window _speechWindow;
     private readonly Window _window;
     private bool _isClickThrough;
     private bool _isInitiallyPositioning = true;
     private bool _isMascotShown;
+    private bool _isSpeechBubbleShown;
 
     public MascotInteractionController(
         Window window,
+        Window speechWindow,
         FrameworkElement mascotArea,
         UIElement resizeFrame,
         UIElement resizeHandles,
         Func<bool> isControlPressed)
     {
         _window = window;
+        _speechWindow = speechWindow;
         _mascotArea = mascotArea;
         _resizeFrame = resizeFrame;
         _resizeHandles = resizeHandles;
@@ -32,6 +36,12 @@ internal sealed class MascotInteractionController
     public event EventHandler? MascotHidden;
 
     public event EventHandler? MascotShown;
+
+    public event EventHandler? SpeechBubbleHidden;
+
+    public event EventHandler? SpeechBubbleShown;
+
+    public bool IsSpeechBubbleShown => _isSpeechBubbleShown;
 
     public void Initialize()
     {
@@ -51,15 +61,26 @@ internal sealed class MascotInteractionController
         }
 
         var isControlPressed = _isControlPressed();
+        var isCursorOverMascot = IsCursorOverWindow(_window);
+        var isCursorOverSpeechBubble = _speechWindow.IsVisible && IsCursorOverWindow(_speechWindow);
         SetClickThrough(!isControlPressed && !isResizing);
         UpdateResizeControls(isControlPressed && (isResizing || IsCursorOverMascotArea()));
-        if (isControlPressed || !IsCursorOverWindow())
+        if (isControlPressed || !isCursorOverMascot)
         {
             ShowMascotWithFade();
         }
         else
         {
             HideMascotImmediately();
+        }
+
+        if (isControlPressed || (!isCursorOverMascot && !isCursorOverSpeechBubble))
+        {
+            ShowSpeechBubble();
+        }
+        else
+        {
+            HideSpeechBubble();
         }
     }
 
@@ -100,6 +121,17 @@ internal sealed class MascotInteractionController
         MascotHidden?.Invoke(this, EventArgs.Empty);
     }
 
+    private void HideSpeechBubble()
+    {
+        if (!_isSpeechBubbleShown)
+        {
+            return;
+        }
+
+        _isSpeechBubbleShown = false;
+        SpeechBubbleHidden?.Invoke(this, EventArgs.Empty);
+    }
+
     private void SetClickThrough(bool isEnabled)
     {
         if (_isClickThrough == isEnabled)
@@ -111,16 +143,27 @@ internal sealed class MascotInteractionController
         _isClickThrough = isEnabled;
     }
 
-    private bool IsCursorOverWindow()
+    private void ShowSpeechBubble()
+    {
+        if (_isSpeechBubbleShown)
+        {
+            return;
+        }
+
+        _isSpeechBubbleShown = true;
+        SpeechBubbleShown?.Invoke(this, EventArgs.Empty);
+    }
+
+    private static bool IsCursorOverWindow(Window window)
     {
         if (!NativeInput.TryGetCursorPosition(out var cursorPosition))
         {
             return false;
         }
 
-        var topLeft = _window.PointToScreen(new System.Windows.Point(0, 0));
-        var bottomRight = _window.PointToScreen(
-            new System.Windows.Point(_window.ActualWidth, _window.ActualHeight));
+        var topLeft = window.PointToScreen(new System.Windows.Point(0, 0));
+        var bottomRight = window.PointToScreen(
+            new System.Windows.Point(window.ActualWidth, window.ActualHeight));
         return cursorPosition.X >= topLeft.X
             && cursorPosition.X < bottomRight.X
             && cursorPosition.Y >= topLeft.Y
