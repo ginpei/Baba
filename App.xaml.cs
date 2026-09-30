@@ -19,7 +19,8 @@ public partial class App : System.Windows.Application
                 Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                     "Baba"),
-                Path.Combine(AppContext.BaseDirectory, "Assets", "mascot.png"));
+                Path.Combine(AppContext.BaseDirectory, "Assets", "mascot.png"),
+                Path.Combine(AppContext.BaseDirectory, "Assets", "se-progress.wav"));
             window.Configure(_applicationSession);
         }
         catch (Exception exception) when (

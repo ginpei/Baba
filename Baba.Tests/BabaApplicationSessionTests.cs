@@ -13,7 +13,9 @@ public sealed class BabaApplicationSessionTests
         var dataDirectory = System.IO.Path.Combine(directory.Path, "data");
         Directory.CreateDirectory(dataDirectory);
         var defaultImagePath = System.IO.Path.Combine(directory.Path, "default.png");
+        var defaultSoundPath = System.IO.Path.Combine(directory.Path, "default.wav");
         File.WriteAllBytes(defaultImagePath, [1, 2, 3]);
+        File.WriteAllBytes(defaultSoundPath, [4, 5, 6]);
         var firstSpeechPath = System.IO.Path.Combine(dataDirectory, "first.txt");
         var secondSpeechPath = System.IO.Path.Combine(dataDirectory, "second.txt");
         File.WriteAllText(firstSpeechPath, string.Empty);
@@ -22,6 +24,7 @@ public sealed class BabaApplicationSessionTests
         repository.Save(new BabaSettings
         {
             MascotImagePath = "mascot.png",
+            MessageSoundPath = "message.wav",
             SpeechSources =
             [
                 new SpeechSourceSettings
@@ -36,7 +39,10 @@ public sealed class BabaApplicationSessionTests
             ],
         });
 
-        using var session = BabaApplicationSession.Create(dataDirectory, defaultImagePath);
+        using var session = BabaApplicationSession.Create(
+            dataDirectory,
+            defaultImagePath,
+            defaultSoundPath);
         var firstUpdate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var secondUpdate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         session.SpeechUpdated += (_, message) =>

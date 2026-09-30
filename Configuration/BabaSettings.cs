@@ -4,6 +4,8 @@ public sealed class BabaSettings
 {
     public string MascotImagePath { get; init; } = string.Empty;
 
+    public string? MessageSoundPath { get; init; }
+
     public IReadOnlyList<SpeechSourceSettings> SpeechSources { get; init; } = [];
 
     public double? WindowWidth { get; init; }
@@ -29,6 +31,7 @@ public sealed class BabaSettings
         return new BabaSettings
         {
             MascotImagePath = MascotImagePath,
+            MessageSoundPath = MessageSoundPath,
             SpeechSources = SpeechSources,
             WindowWidth = width,
             WindowHeight = height,

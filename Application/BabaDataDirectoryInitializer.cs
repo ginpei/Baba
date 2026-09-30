@@ -13,15 +13,23 @@ public static class BabaDataDirectoryInitializer
         Hold Ctrl to keep Baba visible. Drag with the left mouse button to move it, or right-click to open its menu.
         """;
 
-    public static BabaSettings Initialize(SettingsRepository settingsRepository, string defaultImagePath)
+    public static BabaSettings Initialize(
+        SettingsRepository settingsRepository,
+        string defaultImagePath,
+        string defaultSoundPath)
     {
         var settings = settingsRepository.Load();
         var isNewConfig = settings is null;
         settings ??= CreateDefaultSettings(settingsRepository.DataDirectory);
+        var isSoundSettingMissing = settings.MessageSoundPath is null;
+        var messageSoundPath = isSoundSettingMissing
+            ? ResolvePath("se-progress.wav", settingsRepository.DataDirectory)
+            : ResolveOptionalPath(settings.MessageSoundPath, settingsRepository.DataDirectory);
 
         var resolvedSettings = new BabaSettings
         {
             MascotImagePath = ResolvePath(settings.MascotImagePath, settingsRepository.DataDirectory),
+            MessageSoundPath = messageSoundPath,
             SpeechSources = settings.SpeechSources
                 .Select(source => new SpeechSourceSettings
                 {
@@ -41,8 +49,12 @@ public static class BabaDataDirectoryInitializer
         }
 
         EnsureImageFile(resolvedSettings.MascotImagePath, defaultImagePath);
+        if (!string.IsNullOrEmpty(resolvedSettings.MessageSoundPath))
+        {
+            EnsureSoundFile(resolvedSettings.MessageSoundPath, defaultSoundPath);
+        }
 
-        if (isNewConfig)
+        if (isNewConfig || isSoundSettingMissing)
         {
             settingsRepository.Save(resolvedSettings);
         }
@@ -53,6 +65,7 @@ public static class BabaDataDirectoryInitializer
     private static BabaSettings CreateDefaultSettings(string dataDirectory) => new()
     {
         MascotImagePath = Path.Combine(dataDirectory, "mascot.png"),
+        MessageSoundPath = Path.Combine(dataDirectory, "se-progress.wav"),
         SpeechSources =
         [
             new SpeechSourceSettings
@@ -64,6 +77,9 @@ public static class BabaDataDirectoryInitializer
 
     private static string ResolvePath(string path, string dataDirectory) =>
         Path.GetFullPath(Path.IsPathRooted(path) ? path : Path.Combine(dataDirectory, path));
+
+    private static string ResolveOptionalPath(string path, string dataDirectory) =>
+        path.Length == 0 ? string.Empty : ResolvePath(path, dataDirectory);
 
     private static void EnsureSpeechFile(string speechFilePath, bool writeInitialText)
     {
@@ -77,15 +93,34 @@ public static class BabaDataDirectoryInitializer
 
     private static void EnsureImageFile(string imageFilePath, string defaultImagePath)
     {
-        EnsureParentDirectory(imageFilePath);
-        if (!File.Exists(imageFilePath))
+        EnsureAssetFile(
+            imageFilePath,
+            defaultImagePath,
+            "The bundled default mascot image was not found.");
+    }
+
+    private static void EnsureSoundFile(string soundFilePath, string defaultSoundPath)
+    {
+        EnsureAssetFile(
+            soundFilePath,
+            defaultSoundPath,
+            "The bundled default message sound was not found.");
+    }
+
+    private static void EnsureAssetFile(
+        string filePath,
+        string defaultFilePath,
+        string missingFileMessage)
+    {
+        EnsureParentDirectory(filePath);
+        if (!File.Exists(filePath))
         {
-            if (!File.Exists(defaultImagePath))
+            if (!File.Exists(defaultFilePath))
             {
-                throw new FileNotFoundException("The bundled default mascot image was not found.", defaultImagePath);
+                throw new FileNotFoundException(missingFileMessage, defaultFilePath);
             }
 
-            File.Copy(defaultImagePath, imageFilePath);
+            File.Copy(defaultFilePath, filePath);
         }
     }
 

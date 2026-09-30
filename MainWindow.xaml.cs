@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Media;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls.Primitives;
@@ -25,6 +26,7 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _speechTimer;
     private readonly DispatcherTimer _interactionTimer;
     private BabaApplicationSession? _applicationSession;
+    private SoundPlayer? _messageSoundPlayer;
     private BabaSettings? _settings;
     private bool _isExiting;
     private bool _isSpeechVisible;
@@ -91,6 +93,10 @@ public partial class MainWindow : Window
         applicationSession.SpeechReadFailed += OnTextReadFailed;
 
         LoadMascotImage(_settings.MascotImagePath);
+        if (!string.IsNullOrEmpty(_settings.MessageSoundPath))
+        {
+            LoadMessageSound(_settings.MessageSoundPath);
+        }
     }
 
     internal void ShowStartupError(Exception exception) =>
@@ -174,6 +180,24 @@ public partial class MainWindow : Window
         }
     }
 
+    private void LoadMessageSound(string soundPath)
+    {
+        try
+        {
+            _messageSoundPlayer = new SoundPlayer(soundPath);
+            _messageSoundPlayer.Load();
+        }
+        catch (Exception exception) when (
+            exception is IOException
+            or InvalidOperationException
+            or TimeoutException)
+        {
+            _messageSoundPlayer?.Dispose();
+            _messageSoundPlayer = null;
+            ShowSpeech($"Could not load message sound: {exception.Message}");
+        }
+    }
+
     private void OnLastLineChanged(object? sender, string line)
     {
         _ = Dispatcher.InvokeAsync(() => ShowSpeech(line));
@@ -187,6 +211,7 @@ public partial class MainWindow : Window
     private void ShowSpeech(string text)
     {
         _currentSpeechText = text;
+        _messageSoundPlayer?.Play();
         ShowCurrentSpeech();
     }
 
@@ -406,6 +431,7 @@ public partial class MainWindow : Window
         _isExiting = true;
         _interactionTimer.Stop();
         _boundsController.Dispose();
+        _messageSoundPlayer?.Dispose();
         _trayIcon.Dispose();
         _speechWindow.Close();
         Close();

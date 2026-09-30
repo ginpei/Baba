@@ -60,10 +60,16 @@ internal sealed class BabaApplicationSession : IDisposable
         }
     }
 
-    public static BabaApplicationSession Create(string dataDirectory, string defaultImagePath)
+    public static BabaApplicationSession Create(
+        string dataDirectory,
+        string defaultImagePath,
+        string defaultSoundPath)
     {
         var settingsRepository = new SettingsRepository(dataDirectory);
-        var settings = BabaDataDirectoryInitializer.Initialize(settingsRepository, defaultImagePath);
+        var settings = BabaDataDirectoryInitializer.Initialize(
+            settingsRepository,
+            defaultImagePath,
+            defaultSoundPath);
         var speechSources = settings.SpeechSources
             .Select(source => (
                 source.SpeechFilePath,

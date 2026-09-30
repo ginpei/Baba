@@ -40,17 +40,20 @@ The project-provided `Assets\mascot.png` is the default image. To use a differen
 
 If the default image is missing or cannot be loaded, Baba displays a placeholder mascot.
 
+The project-provided `Assets\se-progress.wav` is the default new-message sound. To use a different WAV file, update `MessageSoundPath` in `baba.json` and restart the application. Set `MessageSoundPath` to an empty string (`""`) to disable the sound. Redisplaying the current message does not play the sound again.
+
 The speech bubble has a fixed width and follows the mascot independently, so resizing the mascot does not change the bubble's dimensions.
 
 ## Configuration
 
-On first launch, Baba creates `%LocalAppData%\Baba\baba.json`, `%LocalAppData%\Baba\moments.txt`, and `%LocalAppData%\Baba\mascot.png`. The text file starts with brief usage instructions, and the image is copied from the bundled default.
+On first launch, Baba creates `%LocalAppData%\Baba\baba.json`, `%LocalAppData%\Baba\moments.txt`, `%LocalAppData%\Baba\mascot.png`, and `%LocalAppData%\Baba\se-progress.wav`. The text file starts with brief usage instructions, and the image and sound are copied from the bundled defaults.
 
-`baba.json` contains absolute paths for the speech and image files. Edit either path to use files stored elsewhere. After a move or resize, it also stores the current window bounds:
+`baba.json` contains absolute paths for the speech, image, and sound files. Edit these paths to use files stored elsewhere. After a move or resize, it also stores the current window bounds:
 
 ```json
 {
   "MascotImagePath": "C:\\Users\\<user>\\AppData\\Local\\Baba\\mascot.png",
+  "MessageSoundPath": "C:\\Users\\<user>\\AppData\\Local\\Baba\\se-progress.wav",
   "SpeechSources": [
     {
       "SpeechFilePath": "C:\\Users\\<user>\\AppData\\Local\\Baba\\moments.txt"
@@ -67,7 +70,7 @@ On first launch, Baba creates `%LocalAppData%\Baba\baba.json`, `%LocalAppData%\B
 }
 ```
 
-When a configured speech or image file is missing, Baba creates the speech file or copies the bundled default image to the configured location.
+When a configured speech, image, or sound file is missing, Baba creates the speech file or copies the corresponding bundled default asset to the configured location.
 
 ## Speech Line Pattern
 
@@ -100,3 +103,7 @@ When it is omitted, Baba displays the entire non-empty line.
 ## Interaction
 
 Mouse input passes through the mascot to the window behind it. Hold Ctrl while hovering over the mascot to interact.
+
+## Credit
+
+- Default sound `se-progress.wav` - converted from [OtoLogic](https://otologic.jp/)'s ["アニメモーション34-1(短　中)"](https://otologic.jp/free/se/anime-motion03.html) MP3, and used under the [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) license.

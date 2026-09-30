@@ -13,6 +13,9 @@
     <Content Include="Assets\mascot.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Assets\se-progress.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Compile Remove="Baba.Tests\**\*.cs" />
   </ItemGroup>
 
