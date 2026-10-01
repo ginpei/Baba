@@ -70,13 +70,8 @@ internal sealed class BabaApplicationSession : IDisposable
             settingsRepository,
             defaultImagePath,
             defaultSoundPath);
-        var speechSources = settings.SpeechSources
-            .Select(source => (
-                source.SpeechFilePath,
-                LinePattern: SpeechLineParser.CreatePattern(source.SpeechLinePattern)))
-            .ToArray();
-        var textWatchers = speechSources
-            .Select(source => new TextTailWatcher(source.SpeechFilePath, source.LinePattern))
+        var textWatchers = settings.SpeechSources
+            .Select(source => new TextTailWatcher(source.SpeechFilePath))
             .ToArray();
 
         return new BabaApplicationSession(dataDirectory, settings, settingsRepository, textWatchers);

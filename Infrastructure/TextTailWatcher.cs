@@ -8,17 +8,15 @@ public sealed class TextTailWatcher : IDisposable
 {
     private readonly string _filePath;
     private readonly FileSystemWatcher _watcher;
-    private readonly Regex? _linePattern;
     private readonly System.Threading.Timer _debounceTimer;
     private readonly System.Threading.Timer? _pollTimer;
     private readonly object _syncRoot = new();
     private string? _lastLine;
     private bool _isDisposed;
 
-    public TextTailWatcher(string filePath, Regex? linePattern = null)
+    public TextTailWatcher(string filePath)
     {
         _filePath = Path.GetFullPath(filePath);
-        _linePattern = linePattern;
         _watcher = new FileSystemWatcher(Path.GetDirectoryName(_filePath)!, Path.GetFileName(_filePath))
         {
             NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Size,
@@ -98,7 +96,7 @@ public sealed class TextTailWatcher : IDisposable
                 string? lastLine = null;
                 while (reader.ReadLine() is { } line)
                 {
-                    var extractedLine = SpeechLineParser.Extract(line, _linePattern);
+                    var extractedLine = SpeechLineParser.Extract(line);
                     if (extractedLine is not null)
                     {
                         lastLine = extractedLine;

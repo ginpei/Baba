@@ -22,13 +22,13 @@ Run the unit tests with:
 dotnet test Baba.Tests\Baba.Tests.csproj
 ```
 
-On first launch, Baba creates the following directory and an empty `moments.txt` file:
+On first launch, Baba creates the following directory and a `moments.txt` file containing brief usage instructions:
 
 ```text
 %LocalAppData%\Baba
 ```
 
-Appending a non-whitespace line to `moments.txt` displays that line in the speech bubble.
+Append a line in the fixed format `- YYYY-MM-DD HH:mm:ss <message>` to `moments.txt`. Baba displays the message after the timestamp in the speech bubble.
 
 For speech files on UNC paths, including `\\wsl.localhost\...`, Baba polls once per second as a fallback because file-change notifications from network-backed filesystems can be unreliable.
 
@@ -59,8 +59,7 @@ On first launch, Baba creates `%LocalAppData%\Baba\baba.json`, `%LocalAppData%\B
       "SpeechFilePath": "C:\\Users\\<user>\\AppData\\Local\\Baba\\moments.txt"
     },
     {
-      "SpeechFilePath": "C:\\logs\\application.log",
-      "SpeechLinePattern": "^- ....-..-.. ..:..:.. (.+)$"
+      "SpeechFilePath": "C:\\logs\\application.log"
     }
   ],
   "WindowWidth": 320,
@@ -72,33 +71,34 @@ On first launch, Baba creates `%LocalAppData%\Baba\baba.json`, `%LocalAppData%\B
 
 When a configured speech, image, or sound file is missing, Baba creates the speech file or copies the corresponding bundled default asset to the configured location.
 
-## Speech Line Pattern
+## Speech Line Format
 
-Log lines can include metadata such as timestamp. Each log entry must occupy one line.
+Each speech entry must occupy one line and use this fixed format:
 
-For example, if your log line is formatted as `- YYYY-MM-DD HH:mm:ss <message>` like the following:
+```text
+- YYYY-MM-DD HH:mm:ss <message>
+```
+
+The application uses the regular expression `/^- ....-..-.. ..:..:.. (.+)$/` and displays the trimmed content of its first capture group.
+
+For example:
 
 ```
 - 2026-09-23 17:30:01 Summarizing nicely.
 - 2026-09-23 17:37:24 Reply file is ready!
 ```
 
-Each entry in `SpeechSources` monitors one file. Set its optional `SpeechLinePattern` to extract speech from matching lines:
+Each entry in `SpeechSources` monitors one file:
 
 ```json
 {
   "SpeechSources": [
     {
-      "SpeechFilePath": "C:\\logs\\application.log",
-      "SpeechLinePattern": "^- ....-..-.. ..:..:.. (.+)$"
+      "SpeechFilePath": "C:\\logs\\application.log"
     }
   ]
 }
 ```
-
-The expression must contain a first capture group for the speech text.
-
-When it is omitted, Baba displays the entire non-empty line.
 
 ## Interaction
 

@@ -9,7 +9,9 @@ public static class BabaDataDirectoryInitializer
     private const string InitialSpeechText = """
         Welcome to Baba.
 
-        Add a new non-empty line to this file to display it in Baba's speech bubble.
+        Add a line in this format to display its message in Baba's speech bubble:
+        - YYYY-MM-DD HH:mm:ss <message>
+
         Hold Ctrl to keep Baba visible. Drag with the left mouse button to move it, or right-click to open its menu.
         """;
 
@@ -34,7 +36,6 @@ public static class BabaDataDirectoryInitializer
                 .Select(source => new SpeechSourceSettings
                 {
                     SpeechFilePath = ResolvePath(source.SpeechFilePath, settingsRepository.DataDirectory),
-                    SpeechLinePattern = source.SpeechLinePattern,
                 })
                 .ToArray(),
             WindowWidth = settings.WindowWidth,

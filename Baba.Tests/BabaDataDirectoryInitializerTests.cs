@@ -67,7 +67,6 @@ public sealed class BabaDataDirectoryInitializerTests
                 new SpeechSourceSettings
                 {
                     SpeechFilePath = System.IO.Path.Combine("text", "filtered.log"),
-                    SpeechLinePattern = @"^say: (.+)$",
                 },
             ],
             WindowLeft = 11,
@@ -92,7 +91,6 @@ public sealed class BabaDataDirectoryInitializerTests
         Assert.Equal(imageContents, File.ReadAllBytes(imagePath));
         Assert.Equal(soundContents, File.ReadAllBytes(soundPath));
         Assert.True(File.Exists(filteredSpeechPath));
-        Assert.Equal(@"^say: (.+)$", settings.SpeechSources[1].SpeechLinePattern);
         Assert.Equal(333, settings.WindowWidth);
         Assert.Equal(444, settings.WindowHeight);
     }

@@ -34,7 +34,6 @@ public sealed class BabaApplicationSessionTests
                 new SpeechSourceSettings
                 {
                     SpeechFilePath = "second.txt",
-                    SpeechLinePattern = @"^say: (.+)$",
                 },
             ],
         });
@@ -58,9 +57,9 @@ public sealed class BabaApplicationSessionTests
         };
 
         session.Start();
-        File.AppendAllText(firstSpeechPath, $"First source{Environment.NewLine}");
+        File.AppendAllText(firstSpeechPath, $"- 2026-09-30 10:00:00 First source{Environment.NewLine}");
         await firstUpdate.Task.WaitAsync(TimeSpan.FromSeconds(10));
-        File.AppendAllText(secondSpeechPath, $"say: Second source{Environment.NewLine}");
+        File.AppendAllText(secondSpeechPath, $"- 2026-09-30 10:00:01 Second source{Environment.NewLine}");
         await secondUpdate.Task.WaitAsync(TimeSpan.FromSeconds(10));
     }
 }

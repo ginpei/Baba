@@ -29,7 +29,6 @@ public sealed class SettingsRepositoryTests
                 new SpeechSourceSettings
                 {
                     SpeechFilePath = "moments.txt",
-                    SpeechLinePattern = @"^say: (.+)$",
                 },
                 new SpeechSourceSettings
                 {
@@ -50,9 +49,7 @@ public sealed class SettingsRepositoryTests
         Assert.Equal(settings.MessageSoundPath, loaded.MessageSoundPath);
         Assert.Equal(2, loaded.SpeechSources.Count);
         Assert.Equal("moments.txt", loaded.SpeechSources[0].SpeechFilePath);
-        Assert.Equal(@"^say: (.+)$", loaded.SpeechSources[0].SpeechLinePattern);
         Assert.Equal("other.log", loaded.SpeechSources[1].SpeechFilePath);
-        Assert.Null(loaded.SpeechSources[1].SpeechLinePattern);
         Assert.Equal(settings.WindowLeft, loaded.WindowLeft);
         Assert.Equal(settings.WindowTop, loaded.WindowTop);
         Assert.Equal(settings.WindowWidth, loaded.WindowWidth);
@@ -81,7 +78,7 @@ public sealed class SettingsRepositoryTests
 
         var speechSource = Assert.Single(
             json.RootElement.GetProperty(nameof(BabaSettings.SpeechSources)).EnumerateArray());
-        Assert.False(speechSource.TryGetProperty(nameof(SpeechSourceSettings.SpeechLinePattern), out _));
+        Assert.False(speechSource.TryGetProperty("SpeechLinePattern", out _));
         Assert.False(json.RootElement.TryGetProperty(nameof(BabaSettings.MessageSoundPath), out _));
         Assert.False(json.RootElement.TryGetProperty(nameof(BabaSettings.WindowLeft), out _));
         Assert.False(json.RootElement.TryGetProperty(nameof(BabaSettings.WindowTop), out _));

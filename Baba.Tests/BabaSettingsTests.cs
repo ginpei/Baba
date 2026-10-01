@@ -16,7 +16,6 @@ public sealed class BabaSettingsTests
                 new SpeechSourceSettings
                 {
                     SpeechFilePath = "moments.txt",
-                    SpeechLinePattern = @"^say: (.+)$",
                 },
             ],
             WindowLeft = 1,
@@ -31,7 +30,6 @@ public sealed class BabaSettingsTests
         Assert.Equal("message.wav", updated.MessageSoundPath);
         Assert.Single(updated.SpeechSources);
         Assert.Equal("moments.txt", updated.SpeechSources[0].SpeechFilePath);
-        Assert.Equal(@"^say: (.+)$", updated.SpeechSources[0].SpeechLinePattern);
         Assert.Equal(-10, updated.WindowLeft);
         Assert.Equal(20, updated.WindowTop);
         Assert.Equal(500, updated.WindowWidth);
