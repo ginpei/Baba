@@ -19,6 +19,8 @@ public partial class MainWindow : Window
 {
     private const double ScreenMargin = 12;
     private readonly MascotBoundsController _boundsController;
+    private readonly double _initialWindowHeight;
+    private readonly double _initialWindowWidth;
     private readonly MascotInteractionController _interactionController;
     private readonly TrayIconService _trayIcon;
     private readonly SpeechBubbleWindow _speechWindow;
@@ -36,6 +38,8 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        _initialWindowHeight = Height;
+        _initialWindowWidth = Width;
         _speechWindow = new SpeechBubbleWindow();
         _boundsController = new MascotBoundsController(this);
         _boundsController.BoundsChanged += (_, _) => SaveWindowBounds();
@@ -79,6 +83,7 @@ public partial class MainWindow : Window
         _trayIcon = new TrayIconService(
             ShowMascot,
             HideMascot,
+            ResetWindowBounds,
             OpenDataDirectory,
             ExitApplication);
 
@@ -115,11 +120,9 @@ public partial class MainWindow : Window
             return;
         }
 
-        var workArea = SystemParameters.WorkArea;
         if (!ApplySavedWindowPosition())
         {
-            Left = Math.Max(workArea.Left, workArea.Right - ActualWidth - ScreenMargin);
-            Top = Math.Max(workArea.Top, workArea.Bottom - ActualHeight - ScreenMargin);
+            PositionWindowAtInitialLocation();
         }
         _hasPositionedInitially = true;
         _speechWindow.Owner = this;
@@ -364,6 +367,22 @@ public partial class MainWindow : Window
         Left = left;
         Top = top;
         return WindowPlacement.IsVisibleOnAnyScreen(this);
+    }
+
+    private void PositionWindowAtInitialLocation()
+    {
+        var workArea = SystemParameters.WorkArea;
+        Left = Math.Max(workArea.Left, workArea.Right - Width - ScreenMargin);
+        Top = Math.Max(workArea.Top, workArea.Bottom - Height - ScreenMargin);
+    }
+
+    private void ResetWindowBounds()
+    {
+        Height = _initialWindowHeight;
+        Width = _initialWindowWidth;
+        PositionWindowAtInitialLocation();
+        SaveWindowBounds();
+        ShowMascot();
     }
 
     private void SaveWindowBounds()
