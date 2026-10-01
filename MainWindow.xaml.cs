@@ -363,7 +363,7 @@ public partial class MainWindow : Window
 
         Left = left;
         Top = top;
-        return true;
+        return WindowPlacement.IsVisibleOnAnyScreen(this);
     }
 
     private void SaveWindowBounds()
