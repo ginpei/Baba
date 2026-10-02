@@ -81,6 +81,7 @@ public partial class MainWindow : Window
         SourceInitialized += OnSourceInitialized;
         _trayIcon = new TrayIconService(
             ResetWindowBounds,
+            ReloadSettings,
             OpenDataDirectory,
             ExitApplication);
 
@@ -89,15 +90,26 @@ public partial class MainWindow : Window
     internal void Configure(BabaApplicationSession applicationSession)
     {
         _applicationSession = applicationSession;
-        _settings = applicationSession.Settings;
-        _boundsController.ApplySavedSize(_settings.WindowWidth, _settings.WindowHeight);
+        ApplySettings(applicationSession.Settings, applyWindowPosition: false);
         applicationSession.SpeechUpdated += OnLastLineChanged;
         applicationSession.SpeechReadFailed += OnTextReadFailed;
+    }
+
+    private void ApplySettings(BabaSettings settings, bool applyWindowPosition)
+    {
+        _settings = settings;
+        _boundsController.ApplySavedSize(_settings.WindowWidth, _settings.WindowHeight);
+        if (applyWindowPosition)
+        {
+            ApplySavedWindowPosition();
+        }
 
         LoadMascotImage(
             _settings.MascotImagePath,
             _settings.BorderColor,
             _settings.BorderWidth);
+        _messageSoundPlayer?.Dispose();
+        _messageSoundPlayer = null;
         if (!string.IsNullOrEmpty(_settings.MessageSoundPath))
         {
             LoadMessageSound(_settings.MessageSoundPath);
@@ -388,6 +400,30 @@ public partial class MainWindow : Window
         Width = _initialWindowWidth;
         PositionWindowAtInitialLocation();
         SaveWindowBounds();
+    }
+
+    private void ReloadSettings()
+    {
+        if (_applicationSession is null)
+        {
+            ShowSpeech("Could not reload settings: Baba has not been configured.");
+            return;
+        }
+
+        try
+        {
+            var settings = _applicationSession.ReloadSettings();
+            ApplySettings(settings, applyWindowPosition: true);
+            ShowSpeech("Settings reloaded.");
+        }
+        catch (Exception exception) when (
+            exception is ArgumentException
+            or IOException
+            or JsonException
+            or UnauthorizedAccessException)
+        {
+            ShowSpeech($"Could not reload settings: {exception.Message}");
+        }
     }
 
     private void SaveWindowBounds()

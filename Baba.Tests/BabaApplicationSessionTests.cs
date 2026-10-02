@@ -111,4 +111,71 @@ public sealed class BabaApplicationSessionTests
         File.AppendAllText(secondSpeechPath, $"- 2026-09-30 10:00:01 Second source{Environment.NewLine}");
         await secondUpdate.Task.WaitAsync(TimeSpan.FromSeconds(10));
     }
+
+    [Fact]
+    public async Task ReloadSettings_ReplacesSettingsAndSpeechWatchers()
+    {
+        using var directory = new TemporaryDirectory();
+        var dataDirectory = System.IO.Path.Combine(directory.Path, "data");
+        Directory.CreateDirectory(dataDirectory);
+        var defaultImagePath = System.IO.Path.Combine(directory.Path, "default.png");
+        var defaultSoundPath = System.IO.Path.Combine(directory.Path, "default.wav");
+        File.WriteAllBytes(defaultImagePath, [1, 2, 3]);
+        File.WriteAllBytes(defaultSoundPath, [4, 5, 6]);
+        var firstSpeechPath = System.IO.Path.Combine(dataDirectory, "first.txt");
+        var secondSpeechPath = System.IO.Path.Combine(dataDirectory, "second.txt");
+        File.WriteAllText(firstSpeechPath, string.Empty);
+        File.WriteAllText(secondSpeechPath, string.Empty);
+        var repository = new SettingsRepository(dataDirectory);
+        repository.Save(new BabaSettings
+        {
+            MascotImagePath = "mascot.png",
+            MessageSoundPath = "message.wav",
+            SpeechSources =
+            [
+                new SpeechSourceSettings
+                {
+                    SpeechFilePath = "first.txt",
+                },
+            ],
+        });
+
+        using var session = BabaApplicationSession.Create(
+            dataDirectory,
+            defaultImagePath,
+            defaultSoundPath);
+        session.Start();
+        repository.Save(new BabaSettings
+        {
+            BorderColor = "#FF112233",
+            BorderWidth = 2,
+            MascotImagePath = "mascot.png",
+            MessageSoundPath = string.Empty,
+            SpeechSources =
+            [
+                new SpeechSourceSettings
+                {
+                    SpeechFilePath = "second.txt",
+                },
+            ],
+        });
+        var update = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        session.SpeechUpdated += (_, message) =>
+        {
+            if (message == "Reloaded source")
+            {
+                update.TrySetResult();
+            }
+        };
+
+        var settings = session.ReloadSettings();
+        File.AppendAllText(secondSpeechPath, $"- 2026-10-01 10:00:00 Reloaded source{Environment.NewLine}");
+        await update.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal("#FF112233", settings.BorderColor);
+        Assert.Equal(2, settings.BorderWidth);
+        Assert.Equal(string.Empty, settings.MessageSoundPath);
+        Assert.Equal(System.IO.Path.GetFullPath(secondSpeechPath), settings.SpeechSources[0].SpeechFilePath);
+        Assert.Same(settings, session.Settings);
+    }
 }
