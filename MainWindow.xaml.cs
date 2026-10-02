@@ -11,6 +11,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Baba.Application;
 using Baba.Configuration;
+using Baba.Infrastructure;
 using Baba.Presentation;
 
 namespace Baba;
@@ -18,6 +19,7 @@ namespace Baba;
 public partial class MainWindow : Window
 {
     private const double ScreenMargin = 12;
+    private readonly ApplicationLog _log;
     private readonly MascotBoundsController _boundsController;
     private readonly double _initialWindowHeight;
     private readonly double _initialWindowWidth;
@@ -35,8 +37,9 @@ public partial class MainWindow : Window
     private bool _hasPositionedInitially;
     private string? _currentSpeechText;
 
-    public MainWindow()
+    internal MainWindow(ApplicationLog log)
     {
+        _log = log;
         InitializeComponent();
         _initialWindowHeight = Height;
         _initialWindowWidth = Width;
@@ -119,6 +122,9 @@ public partial class MainWindow : Window
     internal void ShowStartupError(Exception exception) =>
         ShowSpeech($"Could not load Baba settings: {exception.Message}");
 
+    internal void ShowUnexpectedError(Exception exception) =>
+        ShowSpeech($"Unexpected error: {exception.Message}. Details were written to baba.log.");
+
     private void OnSourceInitialized(object? sender, EventArgs e)
     {
         _interactionController.Initialize();
@@ -161,7 +167,7 @@ public partial class MainWindow : Window
         }
         catch (Win32Exception exception)
         {
-            ShowSpeech($"Could not open data folder: {exception.Message}");
+            ReportError("Could not open data folder", exception);
         }
     }
 
@@ -193,11 +199,11 @@ public partial class MainWindow : Window
         }
         catch (NotSupportedException exception)
         {
-            ShowSpeech($"Could not load PNG: {exception.Message}");
+            ReportError("Could not load PNG", exception);
         }
         catch (IOException exception)
         {
-            ShowSpeech($"Could not load PNG: {exception.Message}");
+            ReportError("Could not load PNG", exception);
         }
     }
 
@@ -215,7 +221,7 @@ public partial class MainWindow : Window
         {
             _messageSoundPlayer?.Dispose();
             _messageSoundPlayer = null;
-            ShowSpeech($"Could not load message sound: {exception.Message}");
+            ReportError("Could not load message sound", exception);
         }
     }
 
@@ -226,6 +232,7 @@ public partial class MainWindow : Window
 
     private void OnTextReadFailed(object? sender, Exception exception)
     {
+        _log.WriteException("Could not read speech file", exception);
         _ = Dispatcher.InvokeAsync(() => ShowSpeech($"Could not read speech file: {exception.Message}"));
     }
 
@@ -422,7 +429,7 @@ public partial class MainWindow : Window
             or JsonException
             or UnauthorizedAccessException)
         {
-            ShowSpeech($"Could not reload settings: {exception.Message}");
+            ReportError("Could not reload settings", exception);
         }
     }
 
@@ -440,10 +447,15 @@ public partial class MainWindow : Window
         }
         catch (Exception exception) when (exception is ArgumentOutOfRangeException or IOException or UnauthorizedAccessException)
         {
-            ShowSpeech($"Could not save window bounds: {exception.Message}");
+            ReportError("Could not save window bounds", exception);
         }
     }
 
+    private void ReportError(string context, Exception exception)
+    {
+        _log.WriteException(context, exception);
+        ShowSpeech($"{context}: {exception.Message}");
+    }
 
     private void ShowContextMenu(object sender, MouseButtonEventArgs e)
     {
