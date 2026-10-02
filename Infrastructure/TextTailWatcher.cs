@@ -35,7 +35,7 @@ public sealed class TextTailWatcher : IDisposable
 
     public event EventHandler<Exception>? ReadFailed;
 
-    public void Start()
+    public void Start(bool readInitialLine = true)
     {
         if (!File.Exists(_filePath))
         {
@@ -44,7 +44,10 @@ public sealed class TextTailWatcher : IDisposable
 
         _watcher.EnableRaisingEvents = true;
         _pollTimer?.Change(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
-        ScheduleRead();
+        if (readInitialLine)
+        {
+            ScheduleRead();
+        }
     }
 
     private void OnFileChanged(object sender, FileSystemEventArgs e) => ScheduleRead();
@@ -66,7 +69,7 @@ public sealed class TextTailWatcher : IDisposable
     {
         try
         {
-            var latestLine = ReadLastNonEmptyLine();
+            var latestLine = ReadLastNonEmptyLine()?.Message;
             if (latestLine is not null && latestLine != _lastLine)
             {
                 _lastLine = latestLine;
@@ -82,7 +85,31 @@ public sealed class TextTailWatcher : IDisposable
         }
     }
 
-    private string? ReadLastNonEmptyLine()
+    internal SpeechEntry? ReadLatestEntry()
+    {
+        try
+        {
+            var snapshot = ReadSnapshot();
+            _lastLine = snapshot.LastEntry?.Message;
+            return snapshot.LatestEntry;
+        }
+        catch (Exception exception) when (
+            exception is IOException
+            or UnauthorizedAccessException
+            or RegexMatchTimeoutException)
+        {
+            ReadFailed?.Invoke(this, exception);
+            return null;
+        }
+    }
+
+    private SpeechEntry? ReadLastNonEmptyLine()
+    {
+        var snapshot = ReadSnapshot();
+        return snapshot.LastEntry;
+    }
+
+    private SpeechFileSnapshot ReadSnapshot()
     {
         const int maxAttempts = 3;
 
@@ -93,17 +120,22 @@ public sealed class TextTailWatcher : IDisposable
                 using var stream = new FileStream(_filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
                 using var reader = new StreamReader(stream);
 
-                string? lastLine = null;
+                SpeechEntry? lastEntry = null;
+                SpeechEntry? latestEntry = null;
                 while (reader.ReadLine() is { } line)
                 {
-                    var extractedLine = SpeechLineParser.Extract(line);
-                    if (extractedLine is not null)
+                    var entry = SpeechLineParser.Parse(line);
+                    if (entry is not null)
                     {
-                        lastLine = extractedLine;
+                        lastEntry = entry;
+                        if (latestEntry is null || entry.Timestamp > latestEntry.Timestamp)
+                        {
+                            latestEntry = entry;
+                        }
                     }
                 }
 
-                return lastLine;
+                return new SpeechFileSnapshot(lastEntry, latestEntry);
             }
             catch (IOException) when (attempt < maxAttempts - 1)
             {
@@ -111,7 +143,7 @@ public sealed class TextTailWatcher : IDisposable
             }
         }
 
-        return null;
+        return new SpeechFileSnapshot(null, null);
     }
 
     public void Dispose()
@@ -133,4 +165,8 @@ public sealed class TextTailWatcher : IDisposable
 
     private static bool IsUncPath(string path) =>
         path.StartsWith(@"\\", StringComparison.Ordinal);
+
+    private sealed record SpeechFileSnapshot(
+        SpeechEntry? LastEntry,
+        SpeechEntry? LatestEntry);
 }

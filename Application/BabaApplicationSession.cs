@@ -18,47 +18,21 @@ internal sealed class BabaApplicationSession : IDisposable
         Settings = settings;
         _settingsRepository = settingsRepository;
         _textWatchers = textWatchers;
+
+        foreach (var watcher in _textWatchers)
+        {
+            watcher.LastLineChanged += OnLastLineChanged;
+            watcher.ReadFailed += OnReadFailed;
+        }
     }
 
     public string DataDirectory { get; }
 
     public BabaSettings Settings { get; }
 
-    public event EventHandler<Exception>? SpeechReadFailed
-    {
-        add
-        {
-            foreach (var watcher in _textWatchers)
-            {
-                watcher.ReadFailed += value;
-            }
-        }
-        remove
-        {
-            foreach (var watcher in _textWatchers)
-            {
-                watcher.ReadFailed -= value;
-            }
-        }
-    }
+    public event EventHandler<Exception>? SpeechReadFailed;
 
-    public event EventHandler<string>? SpeechUpdated
-    {
-        add
-        {
-            foreach (var watcher in _textWatchers)
-            {
-                watcher.LastLineChanged += value;
-            }
-        }
-        remove
-        {
-            foreach (var watcher in _textWatchers)
-            {
-                watcher.LastLineChanged -= value;
-            }
-        }
-    }
+    public event EventHandler<string>? SpeechUpdated;
 
     public static BabaApplicationSession Create(
         string dataDirectory,
@@ -83,7 +57,16 @@ internal sealed class BabaApplicationSession : IDisposable
     {
         foreach (var watcher in _textWatchers)
         {
-            watcher.Start();
+            watcher.Start(readInitialLine: false);
+        }
+
+        var latestEntry = _textWatchers
+            .Select(watcher => watcher.ReadLatestEntry())
+            .OfType<SpeechEntry>()
+            .MaxBy(v => v.Timestamp);
+        if (latestEntry is not null)
+        {
+            SpeechUpdated?.Invoke(this, latestEntry.Message);
         }
     }
 
@@ -91,7 +74,15 @@ internal sealed class BabaApplicationSession : IDisposable
     {
         foreach (var watcher in _textWatchers)
         {
+            watcher.LastLineChanged -= OnLastLineChanged;
+            watcher.ReadFailed -= OnReadFailed;
             watcher.Dispose();
         }
     }
+
+    private void OnLastLineChanged(object? sender, string message) =>
+        SpeechUpdated?.Invoke(this, message);
+
+    private void OnReadFailed(object? sender, Exception exception) =>
+        SpeechReadFailed?.Invoke(this, exception);
 }
