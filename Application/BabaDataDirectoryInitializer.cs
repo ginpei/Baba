@@ -22,10 +22,11 @@ public static class BabaDataDirectoryInitializer
         var settings = settingsRepository.Load();
         var isNewConfig = settings is null;
         settings ??= CreateDefaultSettings(settingsRepository.DataDirectory);
-        var isSoundSettingMissing = settings.MessageSoundPath is null;
-        var messageSoundPath = isSoundSettingMissing
+        var configuredMessageSoundPath = settings.MessageSoundPath;
+        var isSoundSettingMissing = configuredMessageSoundPath is null;
+        var messageSoundPath = configuredMessageSoundPath is null
             ? ResolvePath("se-progress.wav", settingsRepository.DataDirectory)
-            : ResolveOptionalPath(settings.MessageSoundPath, settingsRepository.DataDirectory);
+            : ResolveOptionalPath(configuredMessageSoundPath, settingsRepository.DataDirectory);
 
         var resolvedSettings = new BabaSettings
         {

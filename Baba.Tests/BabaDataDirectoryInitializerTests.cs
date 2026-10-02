@@ -24,17 +24,19 @@ public sealed class BabaDataDirectoryInitializerTests
             defaultImagePath,
             defaultSoundPath);
 
+        var messageSoundPath = settings.MessageSoundPath;
+        Assert.NotNull(messageSoundPath);
         Assert.Equal(System.IO.Path.Combine(dataDirectory, "mascot.png"), settings.MascotImagePath);
-        Assert.Equal(System.IO.Path.Combine(dataDirectory, "se-progress.wav"), settings.MessageSoundPath);
+        Assert.Equal(System.IO.Path.Combine(dataDirectory, "se-progress.wav"), messageSoundPath);
         var source = Assert.Single(settings.SpeechSources);
         Assert.Equal(System.IO.Path.Combine(dataDirectory, "moments.txt"), source.SpeechFilePath);
         var speechContents = File.ReadAllText(source.SpeechFilePath);
         Assert.Contains("version: \"0.0.1\"", speechContents);
         Assert.Contains("Timestamp | Type | Message", speechContents);
         Assert.Equal(imageContents, File.ReadAllBytes(settings.MascotImagePath));
-        Assert.Equal(soundContents, File.ReadAllBytes(settings.MessageSoundPath));
+        Assert.Equal(soundContents, File.ReadAllBytes(messageSoundPath));
         Assert.Equal(settings.MascotImagePath, repository.Load()?.MascotImagePath);
-        Assert.Equal(settings.MessageSoundPath, repository.Load()?.MessageSoundPath);
+        Assert.Equal(messageSoundPath, repository.Load()?.MessageSoundPath);
         Assert.Equal(source.SpeechFilePath, repository.Load()?.SpeechSources[0].SpeechFilePath);
     }
 
@@ -131,8 +133,10 @@ public sealed class BabaDataDirectoryInitializerTests
             defaultImagePath,
             defaultSoundPath);
 
+        var messageSoundPath = settings.MessageSoundPath;
+        Assert.NotNull(messageSoundPath);
         Assert.Equal(imageContents, File.ReadAllBytes(settings.MascotImagePath));
-        Assert.Equal(soundContents, File.ReadAllBytes(settings.MessageSoundPath));
+        Assert.Equal(soundContents, File.ReadAllBytes(messageSoundPath));
         Assert.True(File.Exists(settings.SpeechSources[0].SpeechFilePath));
     }
 
