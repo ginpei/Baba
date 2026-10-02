@@ -22,13 +22,13 @@ Run the unit tests with:
 dotnet test Baba.Tests\Baba.Tests.csproj
 ```
 
-On first launch, Baba creates the following directory and a `moments.txt` file containing brief usage instructions:
+On first launch, Baba creates the following directory and a `moments.txt` file containing the speech-entry table header:
 
 ```text
 %LocalAppData%\Baba
 ```
 
-Append a line in the fixed format `- YYYY-MM-DD HH:mm:ss <message>` to `moments.txt`. Baba displays the message after the timestamp in the speech bubble.
+Append a line in the fixed format `YYYY-MM-DD HH:mm:ss | <type> | <message>` to `moments.txt`. Baba displays the message column in the speech bubble. The type column is reserved for future use.
 
 For speech files on UNC paths, including `\\wsl.localhost\...`, Baba polls once per second as a fallback because file-change notifications from network-backed filesystems can be unreliable.
 
@@ -46,7 +46,7 @@ The speech bubble has a fixed width and follows the mascot independently, so res
 
 ## Configuration
 
-On first launch, Baba creates `%LocalAppData%\Baba\baba.json`, `%LocalAppData%\Baba\moments.txt`, `%LocalAppData%\Baba\mascot.png`, and `%LocalAppData%\Baba\se-progress.wav`. The text file starts with brief usage instructions, and the image and sound are copied from the bundled defaults.
+On first launch, Baba creates `%LocalAppData%\Baba\baba.json`, `%LocalAppData%\Baba\moments.txt`, `%LocalAppData%\Baba\mascot.png`, and `%LocalAppData%\Baba\se-progress.wav`. The text file starts with the speech-entry table header, and the image and sound are copied from the bundled defaults.
 
 `baba.json` contains absolute paths for the speech, image, and sound files. Edit these paths to use files stored elsewhere. After a move or resize, it also stores the current window bounds:
 
@@ -83,16 +83,16 @@ When a configured speech, image, or sound file is missing, Baba creates the spee
 Each speech entry must occupy one line and use this fixed format:
 
 ```text
-- YYYY-MM-DD HH:mm:ss <message>
+YYYY-MM-DD HH:mm:ss | <type> | <message>
 ```
 
-The application uses the regular expression `/^- ....-..-.. ..:..:.. (.+)$/` and displays the trimmed content of its first capture group.
+The type must be non-empty but is otherwise ignored for now. Baba displays the trimmed message. Escape a `|` within the message as `\|`; Baba removes the escape before displaying it.
 
 For example:
 
 ```
-- 2026-09-23 17:30:01 Summarizing nicely.
-- 2026-09-23 17:37:24 Reply file is ready!
+2026-09-23 17:30:01 | working | Summarizing nicely.
+2026-09-23 17:37:24 | done | Reply file is ready!
 ```
 
 Each entry in `SpeechSources` monitors one file:

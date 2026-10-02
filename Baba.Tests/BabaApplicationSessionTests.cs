@@ -19,12 +19,12 @@ public sealed class BabaApplicationSessionTests
         File.WriteAllLines(
             System.IO.Path.Combine(dataDirectory, "first.txt"),
             [
-                "- 2026-09-30 10:00:02 Newest source",
-                "- 2026-09-30 10:00:00 Later line with older date",
+                "2026-09-30 10:00:02 | working | Newest source",
+                "2026-09-30 10:00:00 | working | Later line with older date",
             ]);
         File.WriteAllText(
             System.IO.Path.Combine(dataDirectory, "second.txt"),
-            "- 2026-09-30 10:00:01 Other source");
+            "2026-09-30 10:00:01 | working | Other source");
         var repository = new SettingsRepository(dataDirectory);
         repository.Save(new BabaSettings
         {
@@ -106,9 +106,9 @@ public sealed class BabaApplicationSessionTests
         };
 
         session.Start();
-        File.AppendAllText(firstSpeechPath, $"- 2026-09-30 10:00:00 First source{Environment.NewLine}");
+        File.AppendAllText(firstSpeechPath, $"2026-09-30 10:00:00 | working | First source{Environment.NewLine}");
         await firstUpdate.Task.WaitAsync(TimeSpan.FromSeconds(10));
-        File.AppendAllText(secondSpeechPath, $"- 2026-09-30 10:00:01 Second source{Environment.NewLine}");
+        File.AppendAllText(secondSpeechPath, $"2026-09-30 10:00:01 | working | Second source{Environment.NewLine}");
         await secondUpdate.Task.WaitAsync(TimeSpan.FromSeconds(10));
     }
 
@@ -169,7 +169,7 @@ public sealed class BabaApplicationSessionTests
         };
 
         var settings = session.ReloadSettings();
-        File.AppendAllText(secondSpeechPath, $"- 2026-10-01 10:00:00 Reloaded source{Environment.NewLine}");
+        File.AppendAllText(secondSpeechPath, $"2026-10-01 10:00:00 | working | Reloaded source{Environment.NewLine}");
         await update.Task.WaitAsync(TimeSpan.FromSeconds(10));
 
         Assert.Equal("#FF112233", settings.BorderColor);

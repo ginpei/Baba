@@ -1,5 +1,9 @@
 # Baba Copilot Instructions
 
+## Initialization
+
+When you start a session, invoke `/baba ,minutes.ja.baba.md`.
+
 ## Build and run
 
 This is a .NET 10 WPF Windows application (`net10.0-windows`), so build and run it from Windows:

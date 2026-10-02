@@ -7,12 +7,11 @@ namespace Baba.Application;
 public static class BabaDataDirectoryInitializer
 {
     private const string InitialSpeechText = """
-        Welcome to Baba.
-
-        Add a line in this format to display its message in Baba's speech bubble:
-        - YYYY-MM-DD HH:mm:ss <message>
-
-        Hold Ctrl to keep Baba visible. Drag with the left mouse button to move it, or right-click to open its menu.
+        ---
+        version: "0.0.1"
+        ---
+        Timestamp | Type | Message
+        ----------|------|--------
         """;
 
     public static BabaSettings Initialize(

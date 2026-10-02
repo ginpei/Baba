@@ -28,7 +28,9 @@ public sealed class BabaDataDirectoryInitializerTests
         Assert.Equal(System.IO.Path.Combine(dataDirectory, "se-progress.wav"), settings.MessageSoundPath);
         var source = Assert.Single(settings.SpeechSources);
         Assert.Equal(System.IO.Path.Combine(dataDirectory, "moments.txt"), source.SpeechFilePath);
-        Assert.Contains("Welcome to Baba.", File.ReadAllText(source.SpeechFilePath));
+        var speechContents = File.ReadAllText(source.SpeechFilePath);
+        Assert.Contains("version: \"0.0.1\"", speechContents);
+        Assert.Contains("Timestamp | Type | Message", speechContents);
         Assert.Equal(imageContents, File.ReadAllBytes(settings.MascotImagePath));
         Assert.Equal(soundContents, File.ReadAllBytes(settings.MessageSoundPath));
         Assert.Equal(settings.MascotImagePath, repository.Load()?.MascotImagePath);

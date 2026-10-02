@@ -5,8 +5,9 @@ namespace Baba.Tests;
 public sealed class SpeechLineParserTests
 {
     [Theory]
-    [InlineData("- 2026-09-23 17:30:01 hello", "hello")]
-    [InlineData("- 2026-09-23 17:30:01  hello  ", "hello")]
+    [InlineData("2026-09-23 17:30:01 | working | hello", "hello")]
+    [InlineData("2026-09-23 17:30:01 | done |  hello  ", "hello")]
+    [InlineData(@"2026-09-23 17:30:01 | working | left \| right", "left | right")]
     public void Extract_ReturnsTrimmedMessageFromFixedFormat(string line, string expected)
     {
         Assert.Equal(expected, SpeechLineParser.Extract(line));
@@ -14,10 +15,13 @@ public sealed class SpeechLineParserTests
 
     [Theory]
     [InlineData("hello")]
-    [InlineData("- 2026-09-23 17:30:01   ")]
-    [InlineData(" - 2026-09-23 17:30:01 hello")]
-    [InlineData("- 2026/09/23 17:30:01 hello")]
-    [InlineData("- 2026-99-99 17:30:01 hello")]
+    [InlineData("Timestamp | Type | Message")]
+    [InlineData("2026-09-23 17:30:01 | working |   ")]
+    [InlineData("2026-09-23 17:30:01 |   | hello")]
+    [InlineData(" 2026-09-23 17:30:01 | working | hello")]
+    [InlineData("2026/09/23 17:30:01 | working | hello")]
+    [InlineData("2026-99-99 17:30:01 | working | hello")]
+    [InlineData("2026-09-23 17:30:01 | working | left | right")]
     public void Extract_ReturnsNullWhenLineDoesNotMatchFixedFormat(string line)
     {
         Assert.Null(SpeechLineParser.Extract(line));
@@ -26,7 +30,7 @@ public sealed class SpeechLineParserTests
     [Fact]
     public void Parse_ReturnsTimestampAndMessage()
     {
-        var entry = SpeechLineParser.Parse("- 2026-09-23 17:30:01 hello");
+        var entry = SpeechLineParser.Parse("2026-09-23 17:30:01 | problem | hello");
 
         Assert.NotNull(entry);
         Assert.Equal("hello", entry.Message);
