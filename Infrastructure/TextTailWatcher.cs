@@ -83,6 +83,10 @@ public sealed class TextTailWatcher : IDisposable
         {
             ReadFailed?.Invoke(this, exception);
         }
+        catch (OperationCanceledException)
+        {
+            /** Windows can cancel file opens during sleep transitions. */
+        }
     }
 
     internal SpeechEntry? ReadLatestEntry()
@@ -99,6 +103,11 @@ public sealed class TextTailWatcher : IDisposable
             or RegexMatchTimeoutException)
         {
             ReadFailed?.Invoke(this, exception);
+            return null;
+        }
+        catch (OperationCanceledException)
+        {
+            /** Windows can cancel file opens during sleep transitions. */
             return null;
         }
     }
