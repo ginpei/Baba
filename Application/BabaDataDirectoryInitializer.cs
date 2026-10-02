@@ -30,6 +30,8 @@ public static class BabaDataDirectoryInitializer
 
         var resolvedSettings = new BabaSettings
         {
+            BorderColor = settings.BorderColor,
+            BorderWidth = settings.BorderWidth,
             MascotImagePath = ResolvePath(settings.MascotImagePath, settingsRepository.DataDirectory),
             MessageSoundPath = messageSoundPath,
             SpeechSources = settings.SpeechSources

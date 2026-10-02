@@ -9,6 +9,8 @@ public sealed class BabaSettingsTests
     {
         var settings = new BabaSettings
         {
+            BorderColor = "#80402010",
+            BorderWidth = 6,
             MascotImagePath = "mascot.png",
             MessageSoundPath = "message.wav",
             SpeechSources =
@@ -26,6 +28,8 @@ public sealed class BabaSettingsTests
 
         var updated = settings.WithWindowBounds(-10, 20, 500, 600);
 
+        Assert.Equal("#80402010", updated.BorderColor);
+        Assert.Equal(6, updated.BorderWidth);
         Assert.Equal("mascot.png", updated.MascotImagePath);
         Assert.Equal("message.wav", updated.MessageSoundPath);
         Assert.Single(updated.SpeechSources);

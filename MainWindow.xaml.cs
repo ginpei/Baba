@@ -94,7 +94,10 @@ public partial class MainWindow : Window
         applicationSession.SpeechUpdated += OnLastLineChanged;
         applicationSession.SpeechReadFailed += OnTextReadFailed;
 
-        LoadMascotImage(_settings.MascotImagePath);
+        LoadMascotImage(
+            _settings.MascotImagePath,
+            _settings.BorderColor,
+            _settings.BorderWidth);
         if (!string.IsNullOrEmpty(_settings.MessageSoundPath))
         {
             LoadMessageSound(_settings.MessageSoundPath);
@@ -150,7 +153,10 @@ public partial class MainWindow : Window
         }
     }
 
-    private void LoadMascotImage(string imagePath)
+    private void LoadMascotImage(
+        string imagePath,
+        string? borderColor,
+        int? borderWidth)
     {
         if (!File.Exists(imagePath))
         {
@@ -166,7 +172,10 @@ public partial class MainWindow : Window
             image.EndInit();
             image.Freeze();
 
-            MascotImage.Source = image;
+            MascotImage.Source = MascotBorderRenderer.Render(
+                image,
+                borderColor,
+                borderWidth);
             MascotImage.Visibility = Visibility.Visible;
             PlaceholderMascot.Visibility = Visibility.Collapsed;
         }

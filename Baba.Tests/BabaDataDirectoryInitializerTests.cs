@@ -56,6 +56,8 @@ public sealed class BabaDataDirectoryInitializerTests
         File.WriteAllText(speechPath, "Existing speech");
         repository.Save(new BabaSettings
         {
+            BorderColor = "#80402010",
+            BorderWidth = 6,
             MascotImagePath = System.IO.Path.Combine("images", "mascot.png"),
             MessageSoundPath = System.IO.Path.Combine("sounds", "message.wav"),
             SpeechSources =
@@ -80,6 +82,8 @@ public sealed class BabaDataDirectoryInitializerTests
             System.IO.Path.Combine(directory.Path, "unused-default.png"),
             System.IO.Path.Combine(directory.Path, "unused-default.wav"));
 
+        Assert.Equal("#80402010", settings.BorderColor);
+        Assert.Equal(6, settings.BorderWidth);
         Assert.Equal(System.IO.Path.GetFullPath(imagePath), settings.MascotImagePath);
         Assert.Equal(System.IO.Path.GetFullPath(soundPath), settings.MessageSoundPath);
         Assert.Equal(2, settings.SpeechSources.Count);

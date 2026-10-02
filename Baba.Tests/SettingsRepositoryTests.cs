@@ -22,6 +22,8 @@ public sealed class SettingsRepositoryTests
         var repository = new SettingsRepository(directory.Path);
         var settings = new BabaSettings
         {
+            BorderColor = "#80402010",
+            BorderWidth = 6,
             MascotImagePath = "mascot.png",
             MessageSoundPath = "message.wav",
             SpeechSources =
@@ -45,6 +47,8 @@ public sealed class SettingsRepositoryTests
 
         var loaded = repository.Load();
         Assert.NotNull(loaded);
+        Assert.Equal(settings.BorderColor, loaded.BorderColor);
+        Assert.Equal(settings.BorderWidth, loaded.BorderWidth);
         Assert.Equal(settings.MascotImagePath, loaded.MascotImagePath);
         Assert.Equal(settings.MessageSoundPath, loaded.MessageSoundPath);
         Assert.Equal(2, loaded.SpeechSources.Count);
@@ -79,6 +83,8 @@ public sealed class SettingsRepositoryTests
         var speechSource = Assert.Single(
             json.RootElement.GetProperty(nameof(BabaSettings.SpeechSources)).EnumerateArray());
         Assert.False(speechSource.TryGetProperty("SpeechLinePattern", out _));
+        Assert.False(json.RootElement.TryGetProperty("borderColor", out _));
+        Assert.False(json.RootElement.TryGetProperty("borderWidth", out _));
         Assert.False(json.RootElement.TryGetProperty(nameof(BabaSettings.MessageSoundPath), out _));
         Assert.False(json.RootElement.TryGetProperty(nameof(BabaSettings.WindowLeft), out _));
         Assert.False(json.RootElement.TryGetProperty(nameof(BabaSettings.WindowTop), out _));
@@ -96,6 +102,10 @@ public sealed class SettingsRepositoryTests
     [InlineData("""{"MascotImagePath":"mascot.png","SpeechSources":[null]}""")]
     [InlineData("""{"MascotImagePath":"mascot.png","SpeechSources":[{}]}""")]
     [InlineData("""{"MascotImagePath":"mascot.png","SpeechSources":[{"SpeechFilePath":" "}]}""")]
+    [InlineData("""{"MascotImagePath":"mascot.png","SpeechSources":[{"SpeechFilePath":"moments.txt"}],"borderColor":"#ffffff"}""")]
+    [InlineData("""{"MascotImagePath":"mascot.png","SpeechSources":[{"SpeechFilePath":"moments.txt"}],"borderColor":"#GGFFFFFF"}""")]
+    [InlineData("""{"MascotImagePath":"mascot.png","SpeechSources":[{"SpeechFilePath":"moments.txt"}],"borderWidth":0}""")]
+    [InlineData("""{"MascotImagePath":"mascot.png","SpeechSources":[{"SpeechFilePath":"moments.txt"}],"borderWidth":-1}""")]
     public void Load_RejectsInvalidConfiguration(string json)
     {
         using var directory = new TemporaryDirectory();

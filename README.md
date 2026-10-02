@@ -53,6 +53,8 @@ On first launch, Baba creates `%LocalAppData%\Baba\baba.json`, `%LocalAppData%\B
 ```json
 {
   "MascotImagePath": "C:\\Users\\<user>\\AppData\\Local\\Baba\\mascot.png",
+  "borderColor": "#FFFFFFFF",
+  "borderWidth": 4,
   "MessageSoundPath": "C:\\Users\\<user>\\AppData\\Local\\Baba\\se-progress.wav",
   "SpeechSources": [
     {
@@ -68,6 +70,11 @@ On first launch, Baba creates `%LocalAppData%\Baba\baba.json`, `%LocalAppData%\B
   "WindowTop": 666
 }
 ```
+
+Set `borderColor` or `borderWidth` to draw a rounded, unblurred border outside the
+opaque parts of the mascot PNG. `borderColor` uses `#AARRGGBB`; its first byte
+controls opacity. When only one setting is present, the missing value defaults to
+`#FFFFFFFF` or `4` pixels. Omit both settings to disable the border.
 
 When a configured speech, image, or sound file is missing, Baba creates the speech file or copies the corresponding bundled default asset to the configured location.
 

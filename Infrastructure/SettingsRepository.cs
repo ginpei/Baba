@@ -50,6 +50,19 @@ public sealed class SettingsRepository
             }
         }
 
+        if (settings.BorderColor is not null
+            && !IsArgbColor(settings.BorderColor))
+        {
+            throw new JsonException(
+                $"borderColor in '{configPath}' must use #AARRGGBB format.");
+        }
+
+        if (settings.BorderWidth is <= 0)
+        {
+            throw new JsonException(
+                $"borderWidth in '{configPath}' must be a positive integer.");
+        }
+
         return settings;
     }
 
@@ -58,5 +71,23 @@ public sealed class SettingsRepository
         File.WriteAllText(
             Path.Combine(DataDirectory, ConfigFileName),
             JsonSerializer.Serialize(settings, SerializerOptions));
+    }
+
+    private static bool IsArgbColor(string value)
+    {
+        if (value.Length != 9 || value[0] != '#')
+        {
+            return false;
+        }
+
+        foreach (var character in value.AsSpan(1))
+        {
+            if (!Uri.IsHexDigit(character))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

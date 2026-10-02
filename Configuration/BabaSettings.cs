@@ -1,7 +1,19 @@
+using System.Text.Json.Serialization;
+
 namespace Baba.Configuration;
 
 public sealed class BabaSettings
 {
+    public const string DefaultBorderColor = "#FFFFFFFF";
+
+    public const int DefaultBorderWidth = 4;
+
+    [JsonPropertyName("borderColor")]
+    public string? BorderColor { get; init; }
+
+    [JsonPropertyName("borderWidth")]
+    public int? BorderWidth { get; init; }
+
     public string MascotImagePath { get; init; } = string.Empty;
 
     public string? MessageSoundPath { get; init; }
@@ -30,6 +42,8 @@ public sealed class BabaSettings
 
         return new BabaSettings
         {
+            BorderColor = BorderColor,
+            BorderWidth = BorderWidth,
             MascotImagePath = MascotImagePath,
             MessageSoundPath = MessageSoundPath,
             SpeechSources = SpeechSources,
