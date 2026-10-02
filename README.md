@@ -1,6 +1,6 @@
 # Baba
 
-Baba is a WPF desktop mascot. Use the notification-area icon to show, hide, or exit the application.
+Baba is a WPF desktop mascot.
 
 ## Build and Run
 

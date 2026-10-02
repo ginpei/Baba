@@ -9,15 +9,11 @@ internal sealed class TrayIconService : IDisposable
     private readonly Forms.NotifyIcon _trayIcon;
 
     public TrayIconService(
-        Action showMascot,
-        Action hideMascot,
         Action resetWindowBounds,
         Action openDataDirectory,
         Action exitApplication)
     {
         _contextMenu = new Forms.ContextMenuStrip();
-        _contextMenu.Items.Add("Show", null, (_, _) => showMascot());
-        _contextMenu.Items.Add("Hide", null, (_, _) => hideMascot());
         _contextMenu.Items.Add("Reset Position and Size", null, (_, _) => resetWindowBounds());
         _contextMenu.Items.Add(new Forms.ToolStripSeparator());
         _contextMenu.Items.Add("Open Data Folder", null, (_, _) => openDataDirectory());
@@ -31,7 +27,6 @@ internal sealed class TrayIconService : IDisposable
             Text = "Baba",
             Visible = true,
         };
-        _trayIcon.DoubleClick += (_, _) => showMascot();
     }
 
     public void ShowContextMenuAtCursor() => _contextMenu.Show(Forms.Cursor.Position);

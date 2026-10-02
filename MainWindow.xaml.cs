@@ -79,10 +79,7 @@ public partial class MainWindow : Window
         LocationChanged += (_, _) => PositionSpeechWindow();
         SizeChanged += (_, _) => PositionSpeechWindow();
         SourceInitialized += OnSourceInitialized;
-
         _trayIcon = new TrayIconService(
-            ShowMascot,
-            HideMascot,
             ResetWindowBounds,
             OpenDataDirectory,
             ExitApplication);
@@ -382,7 +379,6 @@ public partial class MainWindow : Window
         Width = _initialWindowWidth;
         PositionWindowAtInitialLocation();
         SaveWindowBounds();
-        ShowMascot();
     }
 
     private void SaveWindowBounds()
@@ -428,21 +424,6 @@ public partial class MainWindow : Window
         }
 
         e.Cancel = true;
-        HideMascot();
-    }
-
-    private void ShowMascot()
-    {
-        Show();
-        WindowState = WindowState.Normal;
-        Activate();
-        ShowSpeechWindow();
-    }
-
-    private void HideMascot()
-    {
-        Hide();
-        _speechWindow.HideImmediately();
     }
 
     private void ExitApplication()
